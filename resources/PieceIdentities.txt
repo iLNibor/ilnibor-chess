@@ -1,0 +1,7 @@
+			Identity	Value
+King		0			0
+Pawn		1			1
+Knight		2			3
+Bishop		3			3
+Rook		4			5
+Queen		5			8
