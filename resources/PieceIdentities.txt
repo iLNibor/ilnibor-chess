@@ -1,7 +1,13 @@
-			Identity	Value
-King		0			0
-Pawn		1			1
-Knight		2			3
-Bishop		3			3
-Rook		4			5
-Queen		5			8
+									Identity	Value
+King								0			0
+King (castle both)					1			0
+King (castle king side)				2			0
+King (castle queen side)			3			0
+Pawn								4			1
+Pawn (double advance)				5			1
+Pawn (en passant left)				6			1
+Pawn (en passant right)				7			1
+Knight								8			3
+Bishop								9			3
+Rook								10			5
+Queen								11			8
