@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+
 /**
  * An abstract class that represents a chess piece.
  * All chess pieces have certain shared behaviors.
@@ -6,9 +8,9 @@
  */
 public abstract class ChessPiece {
 
-    private boolean white;
-    private String name;
-    private int[] rowColPosition;
+    protected boolean white;
+    protected String name;
+    protected int[] rowColPosition;
 
     public ChessPiece(boolean white, String name, int row, int column) {
         this.white = white;
@@ -17,6 +19,8 @@ public abstract class ChessPiece {
         rowColPosition[0] = row;
         rowColPosition[1] = column;
     }
+
+    public abstract LinkedList<int[]> moveDirections();
 
     public boolean isWhite() {
         return white;
