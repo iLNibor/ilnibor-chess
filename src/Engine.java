@@ -1,4 +1,14 @@
-public class Engine{
+import java.util.LinkedList;
+
+/**
+ * This is the engine of the chess game.
+ * It controls game flow and changing of turns,
+ * keeps track of captured pieces, and will eventually
+ * house the AI component of the chess game.
+ * @author Siddarth Senthilkumar
+ * @version 1.1
+ */
+public class Engine {
 
 	ChessPiece[][] board;
 
@@ -41,5 +51,73 @@ public class Engine{
 		// Place kings
 		board[0][4] = new King(true, 0, 4);
 		board[7][4] = new King(false, 7, 4);
+	}
+
+	public LinkedList<int[]> possibleMoves(ChessPiece piece) {
+		LinkedList<int[]> moveLocations = new LinkedList<int[]>();
+
+		int row = piece.rowColPosition()[0];
+		int col = piece.rowColPosition()[1];
+
+		// TODO: enpassant
+		if (piece instanceof Pawn) {
+			// Pawns can move forward when no one is there
+			if (onBoard(row - 1, col)) {
+				int[] validPosition = {row - 1, col};
+				moveLocations.add(validPosition);
+			}
+
+			// Pawns can move one diagonal if opposite color piece is there
+			if (onBoard(row - 1, col - 1)) {
+				ChessPiece existing = board[row - 1][col - 1];
+				if (existing != null) {
+					if (existing.isWhite() != piece.isWhite()) {
+						int[] validPosition = {row - 1, col - 1};
+						moveLocations.add(validPosition);
+					}
+				}
+			}
+
+			if (onBoard(row - 1, col + 1)) {
+				ChessPiece existing = board[row - 1][col + 1];
+				if (existing != null) {
+					if (existing.isWhite() != piece.isWhite()) {
+						int[] validPosition = {row - 1, col + 1};
+						moveLocations.add(validPosition);
+					}
+				}
+			}
+		} else if (piece instanceof Rook) {
+
+		} else if (piece instanceof Knight || piece instanceof King) {
+			// If a piece blocks its path, it must be opposite color
+			// for the knight or king to move there.
+			// Otherwise, if there is no piece, we can also move there.
+
+			LinkedList<int[]> directions = piece.moveDirections();
+
+			for (int[] coords : directions) {
+				if (onBoard(coords[0], coords[1])) {
+					ChessPiece existing = board[coords[0]][coords[1]];
+					if (existing == null || existing.isWhite() != piece.isWhite()) {
+						moveLocations.add(coords);
+					}
+				}
+			}
+		} else if (piece instanceof Bishop) {
+
+		} else if (piece instanceof Queen) {
+
+		} else {
+			System.out.println("What is this magical piece?!");
+			System.exit(0);
+		}
+
+
+		return moveLocations;
+	}
+
+	public static boolean onBoard(int row, int column) {
+		return row < 8 && column < 8 && row >= 0 && column >= 0;
 	}
 }
