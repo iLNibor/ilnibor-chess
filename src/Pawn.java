@@ -7,11 +7,8 @@ public class Pawn extends ChessPiece {
 		super(white, "pawn", row, column);
 	}
 
-	public LinkedList<int[]> moveDirections() {
+	public LinkedList<int[]> emptyBoardMoves() {
 		// TODO: Does not include enpassant
-
-		int row = rowColPosition[0];
-		int col = rowColPosition[1];
 
 		int[] above = {row - 1, col};
 		int[] uLeft = {row - 1, col - 1};

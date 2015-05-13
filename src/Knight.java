@@ -7,10 +7,9 @@ public class Knight extends ChessPiece {
 		super(white, "knight", row, column);
 	}
 
-	public LinkedList<int[]> moveDirections() {
-		int row = rowColPosition[0];
-		int col = rowColPosition[1];
+	public LinkedList<int[]> emptyBoardMoves() {
 
+		// For visual, see:
 		// http://www.mark-weeks.com/aboutcom/images/ble1321n.gif
 		int[] uLeft = {row - 2, col - 1};
 		int[] uRight = {row - 2, col + 1};

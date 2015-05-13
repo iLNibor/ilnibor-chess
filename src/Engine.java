@@ -94,7 +94,7 @@ public class Engine {
 			// for the knight or king to move there.
 			// Otherwise, if there is no piece, we can also move there.
 
-			LinkedList<int[]> directions = piece.moveDirections();
+			LinkedList<int[]> directions = piece.emptyBoardMoves();
 
 			for (int[] coords : directions) {
 				if (onBoard(coords[0], coords[1])) {

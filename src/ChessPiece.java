@@ -10,17 +10,17 @@ public abstract class ChessPiece {
 
     protected boolean white;
     protected String name;
-    protected int[] rowColPosition;
+    protected int row;
+    protected int col;
 
     public ChessPiece(boolean white, String name, int row, int column) {
         this.white = white;
         this.name = name;
-        this.rowColPosition = new int[2];
-        rowColPosition[0] = row;
-        rowColPosition[1] = column;
+        this.row = row;
+        this.col = column;
     }
 
-    public abstract LinkedList<int[]> moveDirections();
+    public abstract LinkedList<int[]> emptyBoardMoves();
 
     public boolean isWhite() {
         return white;
@@ -31,11 +31,11 @@ public abstract class ChessPiece {
     }
 
     public String position() {
-        return "(" + rowColPosition[0] + ", " + rowColPosition[1] + ")";
+        return "(" + row + ", " + col + ")";
     }
 
     public int[] rowColPosition() {
-        return rowColPosition;
+        return new int[] {row, col};
     }
 
     public String toString() {

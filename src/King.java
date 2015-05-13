@@ -7,9 +7,9 @@ public class King extends ChessPiece {
 		super(white, "king", row, column);
 	}
 
-	public LinkedList<int[]> moveDirections() {
-		int row = rowColPosition[0];
-		int col = rowColPosition[1];
+	public LinkedList<int[]> emptyBoardMoves() {
+
+		// TODO: castling
 
 		int[] above = {row - 1, col};
 		int[] below = {row + 1, col};
