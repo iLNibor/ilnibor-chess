@@ -30,6 +30,14 @@ public abstract class ChessPiece {
         return name;
     }
 
+    public int getRow() {
+        return row;
+    }
+
+    public int getColumn() {
+        return col;
+    }
+
     public String position() {
         return "(" + row + ", " + col + ")";
     }

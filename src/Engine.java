@@ -53,6 +53,7 @@ public class Engine {
 		board[7][4] = new King(false, 7, 4);
 	}
 
+	// TODO: can't move something that is pinned
 	public LinkedList<int[]> possibleMoves(ChessPiece piece) {
 		LinkedList<int[]> moveLocations = new LinkedList<int[]>();
 
@@ -67,7 +68,7 @@ public class Engine {
 				moveLocations.add(validPosition);
 			}
 
-			// Pawns can move one diagonal if opposite color piece is there
+			// Pawns can move one diagonally if opposite color piece is there
 			if (onBoard(row - 1, col - 1)) {
 				ChessPiece existing = board[row - 1][col - 1];
 				if (existing != null) {
@@ -88,7 +89,7 @@ public class Engine {
 				}
 			}
 		} else if (piece instanceof Rook) {
-
+			moveLocations = rookMoves(piece);
 		} else if (piece instanceof Knight || piece instanceof King) {
 			// If a piece blocks its path, it must be opposite color
 			// for the knight or king to move there.
@@ -105,9 +106,12 @@ public class Engine {
 				}
 			}
 		} else if (piece instanceof Bishop) {
-
+			moveLocations = bishopMoves(piece);
 		} else if (piece instanceof Queen) {
-
+			LinkedList<int[]> rMoves = rookMoves(piece);
+			LinkedList<int[]> bMoves = bishopMoves(piece);
+			moveLocations.addAll(rMoves);
+			moveLocations.addAll(bMoves);
 		} else {
 			System.out.println("What is this magical piece?!");
 			System.exit(0);
@@ -117,7 +121,154 @@ public class Engine {
 		return moveLocations;
 	}
 
+	public LinkedList<int[]> rookMoves(ChessPiece piece) {
+		LinkedList<int[]> moveLocations = new LinkedList<int[]>();
+
+		// Down
+		for (int i = 1; i + piece.getRow() < 8; i++) {
+			ChessPiece existing = board[i + piece.getRow()][piece.getColumn()];
+			if (existing != null) {
+				// We hit the first item below that is a piece on the board
+				if (existing.isWhite() != piece.isWhite()) {
+					// Colors don't match, rook can go there
+					int[] position = new int[] {i + piece.getRow(), piece.getColumn()};
+					moveLocations.add(position);
+				}
+
+				// Done looking down
+				i = 8;
+			} else {
+				// Just a blank space
+				int[] position = new int[] {i + piece.getRow(), piece.getColumn()};
+				moveLocations.add(position);
+			}
+		}
+
+		// Up
+		for (int i = 1; piece.getRow() - i >= 0; i++) {
+			ChessPiece existing = board[piece.getRow() - i][piece.getColumn()];
+			if (existing != null) {
+				// We hit the first item above that is a piece on the board
+				if (existing.isWhite() != piece.isWhite()) {
+					// Colors don't match, rook can go there
+					int[] position = new int[] {piece.getRow() - i, piece.getColumn()};
+					moveLocations.add(position);
+				}
+
+				// Done looking up
+				i = 8;
+			} else {
+				// Just a blank space
+				int[] position = new int[] {piece.getRow() - i, piece.getColumn()};
+				moveLocations.add(position);
+			}
+		}
+
+		// Left
+		for (int i = 1; piece.getColumn() - i >= 0; i++) {
+			ChessPiece existing = board[piece.getRow()][piece.getColumn() - i];
+			if (existing != null) {
+				// We hit the first item left that is a piece on the board
+				if (existing.isWhite() != piece.isWhite()) {
+					// Colors don't match, rook can go there
+					int[] position = new int[] {piece.getRow(), piece.getColumn() - i};
+					moveLocations.add(position);
+				}
+
+				// Done looking left
+				i = 8;
+			} else {
+				// Just a blank space
+				int[] position = new int[] {piece.getRow(), piece.getColumn() - i};
+				moveLocations.add(position);
+			}
+		}
+
+		// Right
+		for (int i = 1; piece.getColumn() + i < 8; i++) {
+			ChessPiece existing = board[piece.getRow()][piece.getColumn() + i];
+			if (existing != null) {
+				// We hit the first item right that is a piece on the board
+				if (existing.isWhite() != piece.isWhite()) {
+					// Colors don't match, rook can go there
+					int[] position = new int[] {piece.getRow(), piece.getColumn() + i};
+					moveLocations.add(position);
+				}
+
+				// Done looking right
+				i = 8;
+			} else {
+				// Just a blank space
+				int[] position = new int[] {piece.getRow(), piece.getColumn() + i};
+				moveLocations.add(position);
+			}
+		}
+
+		return moveLocations;
+	}
+
+	public LinkedList<int[]> bishopMoves(ChessPiece piece) {
+		LinkedList<int[]> moveLocations = new LinkedList<int[]>();
+
+		int row = piece.getRow();
+		int col = piece.getColumn();
+		// Add in the southwest-northeast diagonal
+		int positionRow = row;
+		int positionCol = col;
+		while (onBoard(positionRow + 1, positionCol - 1) && isEmpty(positionRow + 1, positionCol - 1)) {
+			positionRow += 1;
+			positionCol -= 1;
+		}
+
+		if (onBoard(positionRow + 1, positionCol - 1) && board[positionRow + 1][positionCol - 1].isWhite() != piece.isWhite()) {
+			positionRow += 1;
+			positionCol -= 1;
+		}
+
+		// While space is on the board and
+		// while either we're talking about the current position
+		// or the other position is empty
+		while (onBoard(positionRow, positionCol) && (row == positionRow && col == positionCol || isEmpty(positionRow, positionCol))) {
+			int[] position = new int[] {positionRow, positionCol};
+			if (row != positionRow && col != positionCol) {
+				moveLocations.add(position);
+			}
+			positionRow -= 1;
+			positionCol += 1;
+		}
+
+		// Add in the northwest-southeast diagonal
+		positionRow = row;
+		positionCol = col;
+
+		while (onBoard(positionRow - 1, positionCol - 1) && isEmpty(positionRow - 1, positionCol - 1)) {
+			positionRow -= 1;
+			positionCol -= 1;
+		}
+
+		if (onBoard(positionRow - 1, positionCol - 1) && board[positionRow - 1][positionCol - 1].isWhite() != piece.isWhite()) {
+			positionRow -= 1;
+			positionCol -= 1;
+		}
+
+		while (onBoard(positionRow, positionCol) && (row == positionRow && col == positionCol || isEmpty(positionRow, positionCol))) {
+			int[] position = new int[] {positionRow, positionCol};
+			if (row != positionRow && col != positionCol) {
+				moveLocations.add(position);
+			}
+			positionRow += 1;
+			positionCol += 1;
+		}
+
+
+		return moveLocations;
+	}
+
 	public static boolean onBoard(int row, int column) {
 		return row < 8 && column < 8 && row >= 0 && column >= 0;
+	}
+
+	public boolean isEmpty(int row, int column) {
+		return board[row][column] == null;
 	}
 }
