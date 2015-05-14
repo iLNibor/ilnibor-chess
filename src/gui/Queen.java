@@ -1,3 +1,4 @@
+package gui;
 import java.util.LinkedList;
 
 public class Queen extends ChessPiece {
