@@ -1,4 +1,5 @@
 ilnibor-chess
 =============
 
-Virtual chess engine
+Virtual chess GUI, AI, Engine
+(in development)
