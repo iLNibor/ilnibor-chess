@@ -36,6 +36,43 @@ public class Board {
 			gameInfo[2] = fields[3];
 	}
 	
+	public boolean whiteUnderCheck(){
+		
+		int[][] pawnChecks = new int[][]{{-1,1},{1,1}};
+		int[][] knightChecks = new int[][]{{1,2},{2,1},{2,-1},{1,-2},{-1,2},{-2,1},{-2,-1},{-1,-2}};
+		
+		for (int x = 0; x <= 7; x ++){
+			for (int y = 0; y <= 7; y ++){
+				Piece temp = board[x][y];
+				if (temp != null && temp.ID == 'k' && temp.white){
+					for (int[] pawnMoves: pawnChecks){
+						int targetX = pawnMoves[0] + x;
+						int targetY = pawnMoves[1] + y;
+						if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7 && board[targetX][targetY] != null && board[targetX][targetY].ID == 'p')
+							return true;
+					}
+					for (int[] knightMoves: knightChecks){
+						int targetX = knightMoves[0] + x;
+						int targetY = knightMoves[1] + y;
+						if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7 && board[targetX][targetY] != null && board[targetX][targetY].ID == 'n')
+							return true;
+					}
+					for (int i = 1; i <= 7; i ++){
+						int posX = x + i;
+						int posY = y + i;
+						int negX = x - i;
+						int negY = y - i;
+						if (posX >= 0 && posX <= 7 && posY >= 0 && posY <= 7 && board[posX][posY] != null && (board[posX][posY].ID == 'b' || board[posX][posY].ID == 'q'))
+							return true;
+					}
+					return false;
+				}
+			}
+		}
+		System.out.println("White king not found");
+		return false;
+	}
+	
 	public void printBoard(){
 		if (gameInfo[0].equals("w"))
 			System.out.println("White to move");
@@ -52,7 +89,7 @@ public class Board {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args){
 		Board standard = new Board();
 		standard.printBoard();
 	}
