@@ -1,5 +1,7 @@
 package ai;
 
+import java.util.ArrayList;
+
 public class Board {
 	Piece[][] board;
 	// whiteToMove; canWhiteKingSideCastle, canWhiteQueenSideCastle, canBlackKingSideCastle, canBlackQueenSideCastle; enPassantSquare
@@ -36,32 +38,39 @@ public class Board {
 			gameInfo[2] = fields[3];
 	}
 	
-	public boolean underCheck(){
-		
+	public ArrayList<String> generateMoves(){
+		ArrayList<String> moveList = new ArrayList<String>();
 		boolean whiteToMove = gameInfo[0].equals("w");
-		
-		int[][] pawnChecks = new int[][]{{-1,1},{1,1}};
-		int[][] knightChecks = new int[][]{{1,2},{2,1},{2,-1},{1,-2},{-1,2},{-2,1},{-2,-1},{-1,-2}};
-		int[][] kingChecks = new int[][]{{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}};
-		
+		for (int x = 0; x <= 7; x ++){
+			for (int y = 0; y <= 7; y ++){
+				Piece temp = board[x][y];
+				if (temp != null && temp.white == whiteToMove) continue;
+				
+			}
+		}
+		return moveList;
+	}
+	
+	public boolean underCheck(){
+		boolean whiteToMove = gameInfo[0].equals("w");
 		for (int x = 0; x <= 7; x ++){
 			for (int y = 0; y <= 7; y ++){
 				Piece temp = board[x][y];
 				if (temp != null && temp.ID == 'k' && temp.white == whiteToMove){
-					for (int[] pawnMoves: pawnChecks){
+					for (int[] pawnMoves: new int[][]{{-1,1},{1,1}}){
 						int targetX = pawnMoves[0] + x;
 						int targetY = pawnMoves[1] + y;
 						if (!temp.white) targetY -= 2;
 						if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7 && board[targetX][targetY] != null && board[targetX][targetY].ID == 'p' && board[targetX][targetY].white != whiteToMove)
 							return true;
 					}
-					for (int[] knightMoves: knightChecks){
+					for (int[] knightMoves: new int[][]{{1,2},{2,1},{2,-1},{1,-2},{-1,2},{-2,1},{-2,-1},{-1,-2}}){
 						int targetX = knightMoves[0] + x;
 						int targetY = knightMoves[1] + y;
 						if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7 && board[targetX][targetY] != null && board[targetX][targetY].ID == 'n' && board[targetX][targetY].white != whiteToMove)
 							return true;
 					}
-					for (int[] kingMoves: kingChecks){
+					for (int[] kingMoves: new int[][]{{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}}){
 						int targetX = kingMoves[0] + x;
 						int targetY = kingMoves[1] + y;
 						if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7 && board[targetX][targetY] != null && board[targetX][targetY].ID == 'k' && board[targetX][targetY].white != whiteToMove)
