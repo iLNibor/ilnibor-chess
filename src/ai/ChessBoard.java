@@ -55,6 +55,20 @@ public class ChessBoard {
         System.out.println();
 	}
 	
+	public long linearMoves(int origin){
+		long binaryOrigin = 1L << origin;
+		long horizontal = (OCCUPIED - 2 * binaryOrigin) ^ Long.reverse(Long.reverse(OCCUPIED) - 2 * Long.reverse(binaryOrigin));
+        long vertical = ((OCCUPIED & FILES[origin%8]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & FILES[origin%8]) - (2 * Long.reverse(binaryOrigin)));
+        return (horizontal & RANKS[7 - origin/8]) | (vertical & FILES[origin%8]);
+	}
+	
+	public long diagMoves(int origin){
+		long binaryOrigin = 1L << origin;
+        long diag = ((OCCUPIED & DIAGS[(origin/8) + (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & DIAGS[(origin/8) + (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
+        long antidiag = ((OCCUPIED & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
+        return (diag & DIAGS[(origin/8) + (origin%8)]) | (antidiag & ANTIDIAGS[(origin/8) + 7 - (origin%8)]);
+	}
+	
 	public String whiteMoves(){
 		String moves = "";
 		
@@ -64,11 +78,12 @@ public class ChessBoard {
         EMPTY = ~OCCUPIED;
         
         moves += whitePawns();
-        
+        moves += whiteBishops();
+     
 		return moves;
 	}
 	
-	public String whitePawns() {
+	public String whitePawns(){
         String list="";
         //x1,y1,x2,y2
         long PAWN_MOVES=(P>>7)&BLACK_PIECES&~RANKS[7]&~FILES[0];//capture right
@@ -153,8 +168,32 @@ public class ChessBoard {
                 list+=""+(index%8+1)+(index%8)+" E";
             }
         }
+        System.out.println("White pawn moves:\t" + list);
         return list;
 	}
+
+	public String whiteBishops(){
+		String list = "";
+		long locations = B;
+		long location = locations & ~(locations - 1);
+		while (location != 0){
+			int indexA = Long.numberOfTrailingZeros(location);
+			long moves = diagMoves(indexA) & WHITE_LEGAL;
+			long move = moves & ~(moves - 1);
+			while (move != 0){
+				int indexB = Long.numberOfTrailingZeros(move);
+				list += "" + (indexA/8) + (indexA%8) + (indexB/8) + (indexB%8);
+				moves &= ~move;
+				move = moves & ~(moves - 1);
+			}
+			locations &= ~location;
+			location = locations & ~(locations - 1);
+		}
+		System.out.println("White bishop moves:\t" + list);
+		return list;
+	}
+	
+	
 	
 	public long binaryToBitboard(String binary){
 		if (binary.charAt(0) == '0') return Long.parseLong(binary, 2);
@@ -180,7 +219,7 @@ public class ChessBoard {
         for (int i=0;i<8;i++) System.out.println(Arrays.toString(chessBoard[i]));
 	}
 	
-	public static void drawBitboard(long bitBoard) {
+	public void drawBitboard(long bitBoard) {
         String chessBoard[][]=new String[8][8];
         for (int i=0;i<64;i++) {
             if (((bitBoard>>>i)&1)==1) chessBoard[i/8][i%8]="X";
