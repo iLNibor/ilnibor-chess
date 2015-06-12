@@ -14,12 +14,16 @@ public class ChessBoard {
     long wkCastle, wqCastle, bkCastle, bqCastle;
 	
 	public ChessBoard(){
-		P = p = R = r = N = n = B = b = Q = q = K = k = 0;
+		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = 0;
+		wkCastle = wqCastle = bkCastle = bqCastle = 1;
 		initiateBoard();
 	}
-	public void initiateBoard(){
-		epSquare = 0;
+	public ChessBoard(String FEN){
+		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = 0;
 		wkCastle = wqCastle = bkCastle = bqCastle = 1;
+		initiateFEN(FEN);
+	}
+	public void initiateBoard(){
 		String chessBoard[][]={{"r","n","b","q","k","b","n","r"},
 							   {"p","p","p","p","p","p","p","p"},
 							   {" "," "," "," "," "," "," "," "},
@@ -29,6 +33,9 @@ public class ChessBoard {
 							   {"P","P","P","P","P","P","P","P"},
 							   {"R","N","B","Q","K","B","N","R"}};
 		arrayToBitboards(chessBoard);
+	}
+	public void initiateFEN(String FEN){
+		
 	}
 	public void arrayToBitboards(String[][] chessBoard){
 		for (int i=0;i<64;i++) {
@@ -52,12 +59,12 @@ public class ChessBoard {
         }
 	}
 	
-	public void makeMove(String move){
+	public long[] makeMove(String move, boolean whiteToMove){
 		epSquare = 0;
-		char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+		char a = move.charAt(0), bb = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
 		int start, end;
 		if (Character.isDigit(d)){
-			start = (a - 48) * 8 + (b - 48);
+			start = (a - 48) * 8 + (bb - 48);
 			end = (c - 48) * 8 + (d - 48);
 			if (((P >>> start) & 1) == 1) {
 				P &= ~(1L << start);
@@ -101,10 +108,10 @@ public class ChessBoard {
 		else if (d == 'P'){
 			if (Character.isUpperCase(c)){
 				start = Long.numberOfTrailingZeros(FILES[a - 48] & RANKS[6]);
-				end = Long.numberOfTrailingZeros(FILES[b - 48] & RANKS[7]);
+				end = Long.numberOfTrailingZeros(FILES[bb - 48] & RANKS[7]);
 			} else {
 				start = Long.numberOfTrailingZeros(FILES[a - 48] & RANKS[1]);
-				end = Long.numberOfTrailingZeros(FILES[b - 48] & RANKS[0]);
+				end = Long.numberOfTrailingZeros(FILES[bb - 48] & RANKS[0]);
 			}
 			P &= ~(1L << start);
 			p &= ~(1L << start);
@@ -120,17 +127,17 @@ public class ChessBoard {
 		else if (d == 'E'){
 			if (c == 'W'){
 				P &= ~(FILES[a - 48] & RANKS[4]);
-				P |= (FILES[b - 48] & RANKS[5]);
-				p &= ~(FILES[b - 48] & RANKS[4]);
+				P |= (FILES[bb - 48] & RANKS[5]);
+				p &= ~(FILES[bb - 48] & RANKS[4]);
 			} else {
 				p &= ~(FILES[a - 48] & RANKS[3]);
-				p |= (FILES[b - 48] & RANKS[2]);
-				P &= ~(FILES[b - 48] & RANKS[3]);
+				p |= (FILES[bb - 48] & RANKS[2]);
+				P &= ~(FILES[bb - 48] & RANKS[3]);
 			}
 		}
 		else if (d == 'C'){
 			if (a == 'W'){
-				if (b == 'K'){
+				if (bb == 'K'){
 					K = K << 2;
 					R &= ~(1L << 63);
 					R |= 1L << 61;
@@ -140,7 +147,8 @@ public class ChessBoard {
 					R |= 1L << 59;
 				}
 				wkCastle = wqCastle = 0;
-				if (b == 'K'){
+			} else {
+				if (bb == 'K'){
 					k = k << 2;
 					r &= ~(1L << 7);
 					r |= 1L << 5;
@@ -154,6 +162,8 @@ public class ChessBoard {
 		}
 		else
 			System.out.println("INVALID MOVE");
+		if ((whiteToMove && (K & unsafeWhite()) != 0) || (!whiteToMove && (k & unsafeBlack()) != 0)) return null;
+		return getGameData();
 	}
 	
 	public long linearMoves(int origin){
@@ -175,9 +185,6 @@ public class ChessBoard {
         empty = ~occupied;
         
         String moves = whitePawnMoves() + bishopMoves(true, whiteLegal) + rookMoves(true, whiteLegal) + queenMoves(true, whiteLegal) + knightMoves(true, whiteLegal) + kingMoves(true, whiteLegal) + whiteCastleMoves();
-        
-        System.out.println("Moves: " + moves);
-        System.out.println(moves.length() / 4 + " moves");
 		return moves;
 	}
 	public String blackMoves(){
@@ -187,9 +194,6 @@ public class ChessBoard {
         empty = ~occupied;
         
         String moves = blackPawnMoves() + bishopMoves(false, blackLegal) + rookMoves(false, blackLegal) + queenMoves(false, blackLegal) + knightMoves(false, blackLegal) + kingMoves(false, blackLegal) + blackCastleMoves();
-        
-        System.out.println("Moves: " + moves);
-        System.out.println(moves.length() / 4 + " moves");
         return moves;
 	}
 	public String whitePawnMoves(){
@@ -529,7 +533,6 @@ public class ChessBoard {
 		if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]);
 		else moves &= ~(FILES[0] | FILES[1]);
 		unsafe |= moves;
-		drawBitboard(unsafe);
 		return unsafe;
 	}
 	public long unsafeWhite(){
@@ -580,7 +583,6 @@ public class ChessBoard {
 		if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]);
 		else moves &= ~(FILES[0] | FILES[1]);
 		unsafe |= moves;
-		drawBitboard(unsafe);
 		return unsafe;
 	}
 	
@@ -605,13 +607,6 @@ public class ChessBoard {
             else if (((q>>i)&1)==1) chessBoard[i/8][i%8]="q";
             else if (((k>>i)&1)==1) chessBoard[i/8][i%8]="k";
         for (int i=0;i<8;i++) System.out.println(Arrays.toString(chessBoard[i]));
-        System.out.println();
-        drawBitboard(epSquare);
-        System.out.println();
-        System.out.println("WK Castle: " + wkCastle);
-        System.out.println("WQ Castle: " + wqCastle);
-        System.out.println("BK Castle: " + bkCastle);
-        System.out.println("BQ Castle: " + bqCastle);
 	}
 	public void drawBitboard(long bitBoard) {
         String chessBoard[][]=new String[8][8];
@@ -645,14 +640,5 @@ public class ChessBoard {
 		bkCastle = data[15];
 		bqCastle = data[16];
 	}
-	
-	public static void main(String[] args) {
-		ChessBoard board = new ChessBoard();
-		board.whiteMoves();
-		System.out.println();
-		//board.makeMove("WK C");
-		//board.blackMoves();
-		//System.out.println();
-		board.drawBoard();
-	}
+
 }
