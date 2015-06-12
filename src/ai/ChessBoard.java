@@ -4,33 +4,32 @@ import java.util.Arrays;
 
 public class ChessBoard {
 
-	long P,p,R,r,N,n,B,b,Q,q,K,k;
+	long P,p,R,r,N,n,B,b,Q,q,K,k,epSquare;
 	final long[] FILES = new long[]{72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L, 1157442765409226768L, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L};
 	final long[] RANKS = new long[]{-72057594037927936L, 71776119061217280L, 280375465082880L, 1095216660480L, 4278190080L, 16711680L, 65280L, 255L};
 	final long[] DIAGS = new long[]{0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L, 0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L, 0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L};
 	final long[] ANTIDIAGS = new long[]{0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
-    final long CENTER = 103481868288L, EXTENDED_CENTER = 66229406269440L, KING_SIDE = -1085102592571150096L, QUEEN_SIDE = 1085102592571150095L, KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
-    long WHITE_LEGAL, WHITE_PIECES, BLACK_LEGAL, BLACK_PIECES, OCCUPIED, EMPTY;
-    String history;
+    final long KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
+    long whiteLegal, whitePieces, blackLegal, blackPieces, occupied, empty;
+    long wkCastle, wqCastle, bkCastle, bqCastle;
 	
 	public ChessBoard(){
 		P = p = R = r = N = n = B = b = Q = q = K = k = 0;
-		history = "6242";
 		initiateBoard();
 	}
-	
 	public void initiateBoard(){
+		epSquare = 0;
+		wkCastle = wqCastle = bkCastle = bqCastle = 1;
 		String chessBoard[][]={{"r","n","b","q","k","b","n","r"},
 							   {"p","p","p","p","p","p","p","p"},
 							   {" "," "," "," "," "," "," "," "},
 							   {" "," "," "," "," "," "," "," "},
-							   {" "," ","P","p"," "," "," "," "},
+							   {" "," "," "," "," "," "," "," "},
 							   {" "," "," "," "," "," "," "," "},
 							   {"P","P","P","P","P","P","P","P"},
 							   {"R","N","B","Q","K","B","N","R"}};
 		arrayToBitboards(chessBoard);
 	}
-	
 	public void arrayToBitboards(String[][] chessBoard){
 		for (int i=0;i<64;i++) {
             String binary="0000000000000000000000000000000000000000000000000000000000000000";
@@ -51,74 +50,152 @@ public class ChessBoard {
                 case "k": k += temp; break;
             }
         }
-        drawBoard();
-        System.out.println();
+	}
+	
+	public void makeMove(String move){
+		epSquare = 0;
+		char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+		int start, end;
+		if (Character.isDigit(d)){
+			start = (a - 48) * 8 + (b - 48);
+			end = (c - 48) * 8 + (d - 48);
+			if (((P >>> start) & 1) == 1) {
+				P &= ~(1L << start);
+				P |= (1L << end);
+				if (a - c == 2) epSquare = 1L << end;
+			} else P &= ~(1L << end);
+			if (((p >>> start) & 1) == 1) {
+				p &= ~(1L << start);
+				p |= (1L << end);
+				if (c - a == 2) epSquare = 1L << end;
+			} else p &= ~(1L << end);
+			if (((R >>> start) & 1) == 1) {
+				R &= ~(1L << start);
+				R |= (1L << end);
+				if (start == 63) wkCastle = 0;
+				else if (start == 56) wqCastle = 0;
+			} else R &= ~(1L << end);
+			if (((r >>> start) & 1) == 1) {
+				r &= ~(1L << start);
+				r |= (1L << end);
+				if (start == 7) bkCastle = 0;
+				else if (start == 0) bqCastle = 0;
+			} else r &= ~(1L << end);
+			if (((N >>> start) & 1) == 1) {N &= ~(1L << start); N |= (1L << end);} else N &= ~(1L << end);
+			if (((n >>> start) & 1) == 1) {n &= ~(1L << start); n |= (1L << end);} else n &= ~(1L << end);
+			if (((B >>> start) & 1) == 1) {B &= ~(1L << start); B |= (1L << end);} else B &= ~(1L << end);
+			if (((b >>> start) & 1) == 1) {b &= ~(1L << start); b |= (1L << end);} else b &= ~(1L << end);
+			if (((Q >>> start) & 1) == 1) {Q &= ~(1L << start); Q |= (1L << end);} else Q &= ~(1L << end);
+			if (((q >>> start) & 1) == 1) {q &= ~(1L << start); q |= (1L << end);} else q &= ~(1L << end);
+			if (((K >>> start) & 1) == 1) {
+				K &= ~(1L << start);
+				K |= (1L << end);
+				wkCastle = wqCastle = 0;
+			}
+			if (((k >>> start) & 1) == 1) {
+				k &= ~(1L << start);
+				k |= (1L << end);
+				bkCastle = bqCastle = 0;
+			}
+		}
+		else if (d == 'P'){
+			if (Character.isUpperCase(c)){
+				start = Long.numberOfTrailingZeros(FILES[a - 48] & RANKS[6]);
+				end = Long.numberOfTrailingZeros(FILES[b - 48] & RANKS[7]);
+			} else {
+				start = Long.numberOfTrailingZeros(FILES[a - 48] & RANKS[1]);
+				end = Long.numberOfTrailingZeros(FILES[b - 48] & RANKS[0]);
+			}
+			P &= ~(1L << start);
+			p &= ~(1L << start);
+			if (c == 'R') R |= (1L << end); else R &= ~(1L << end);
+			if (c == 'r') r |= (1L << end); else r &= ~(1L << end);
+			if (c == 'B') B |= (1L << end); else B &= ~(1L << end);
+			if (c == 'b') b |= (1L << end); else b &= ~(1L << end);
+			if (c == 'N') N |= (1L << end); else N &= ~(1L << end);
+			if (c == 'n') n |= (1L << end); else n &= ~(1L << end);
+			if (c == 'Q') Q |= (1L << end); else Q &= ~(1L << end);
+			if (c == 'q') q |= (1L << end); else q &= ~(1L << end);
+		}
+		else if (d == 'E'){
+			if (c == 'W'){
+				P &= ~(FILES[a - 48] & RANKS[4]);
+				P |= (FILES[b - 48] & RANKS[5]);
+				p &= ~(FILES[b - 48] & RANKS[4]);
+			} else {
+				p &= ~(FILES[a - 48] & RANKS[3]);
+				p |= (FILES[b - 48] & RANKS[2]);
+				P &= ~(FILES[b - 48] & RANKS[3]);
+			}
+		}
+		else if (d == 'C'){
+			if (a == 'W'){
+				if (b == 'K'){
+					K = K << 2;
+					R &= ~(1L << 63);
+					R |= 1L << 61;
+				} else {
+					K = K >> 2;
+					R &= ~(1L << 56);
+					R |= 1L << 59;
+				}
+				wkCastle = wqCastle = 0;
+				if (b == 'K'){
+					k = k << 2;
+					r &= ~(1L << 7);
+					r |= 1L << 5;
+				} else {
+					k = k >> 2;
+					r &= ~(1L << 0);
+					r |= 1L << 3;
+				}
+				bkCastle = bqCastle = 0;
+			}
+		}
+		else
+			System.out.println("INVALID MOVE");
 	}
 	
 	public long linearMoves(int origin){
 		long binaryOrigin = 1L << origin;
-		long horizontal = (OCCUPIED - 2 * binaryOrigin) ^ Long.reverse(Long.reverse(OCCUPIED) - 2 * Long.reverse(binaryOrigin));
-        long vertical = ((OCCUPIED & FILES[origin%8]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & FILES[origin%8]) - (2 * Long.reverse(binaryOrigin)));
+		long horizontal = (occupied - 2 * binaryOrigin) ^ Long.reverse(Long.reverse(occupied) - 2 * Long.reverse(binaryOrigin));
+        long vertical = ((occupied & FILES[origin%8]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & FILES[origin%8]) - (2 * Long.reverse(binaryOrigin)));
         return (horizontal & RANKS[7 - origin/8]) | (vertical & FILES[origin%8]);
 	}
-	
 	public long diagMoves(int origin){
 		long binaryOrigin = 1L << origin;
-        long diag = ((OCCUPIED & DIAGS[(origin/8) + (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & DIAGS[(origin/8) + (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
-        long antidiag = ((OCCUPIED & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(OCCUPIED & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
+        long diag = ((occupied & DIAGS[(origin/8) + (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & DIAGS[(origin/8) + (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
+        long antidiag = ((occupied & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
         return (diag & DIAGS[(origin/8) + (origin%8)]) | (antidiag & ANTIDIAGS[(origin/8) + 7 - (origin%8)]);
 	}
-	
 	public String whiteMoves(){
-		String moves = "";
-		
-		WHITE_LEGAL = ~(P|R|N|B|Q|K|k);
-		BLACK_PIECES = p|r|n|b|q;
-		OCCUPIED = P|N|B|R|Q|K|p|n|b|r|q|k;
-        EMPTY = ~OCCUPIED;
+		whiteLegal = ~(P|R|N|B|Q|K|k);
+		blackPieces = p|r|n|b|q;
+		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
+        empty = ~occupied;
         
-        moves += whitePawnMoves();
-        moves += bishopMoves(true, WHITE_LEGAL);
-        moves += rookMoves(true, WHITE_LEGAL);
-        moves += queenMoves(true, WHITE_LEGAL);
-        moves += knightMoves(true, WHITE_LEGAL);
-        moves += kingMoves(true, WHITE_LEGAL);
-        
-        unsafeBlack();
-        System.out.println();
+        String moves = whitePawnMoves() + bishopMoves(true, whiteLegal) + rookMoves(true, whiteLegal) + queenMoves(true, whiteLegal) + knightMoves(true, whiteLegal) + kingMoves(true, whiteLegal) + whiteCastleMoves();
         
         System.out.println("Moves: " + moves);
         System.out.println(moves.length() / 4 + " moves");
 		return moves;
 	}
-	
 	public String blackMoves(){
-		String moves = "";
-		
-		BLACK_LEGAL = ~(p|r|n|b|q|k|K);
-		WHITE_PIECES = P|R|N|B|Q;
-		OCCUPIED = P|N|B|R|Q|K|p|n|b|r|q|k;
-        EMPTY = ~OCCUPIED;
+		blackLegal = ~(p|r|n|b|q|k|K);
+		whitePieces = P|R|N|B|Q;
+		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
+        empty = ~occupied;
         
-        moves += blackPawnMoves();
-        moves += bishopMoves(false, BLACK_LEGAL);
-        moves += rookMoves(false, BLACK_LEGAL);
-        moves += queenMoves(false, BLACK_LEGAL);
-        moves += knightMoves(false, BLACK_LEGAL);
-        moves += kingMoves(false, BLACK_LEGAL);
-        
-        unsafeWhite();
-        System.out.println();
+        String moves = blackPawnMoves() + bishopMoves(false, blackLegal) + rookMoves(false, blackLegal) + queenMoves(false, blackLegal) + knightMoves(false, blackLegal) + kingMoves(false, blackLegal) + blackCastleMoves();
         
         System.out.println("Moves: " + moves);
         System.out.println(moves.length() / 4 + " moves");
         return moves;
 	}
-	
 	public String whitePawnMoves(){
         String list="";
         //x1,y1,x2,y2
-        long PAWN_MOVES=(P>>7)&BLACK_PIECES&~RANKS[7]&~FILES[0];//capture right
+        long PAWN_MOVES=(P>>7)&blackPieces&~RANKS[7]&~FILES[0];//capture right
         long possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -127,7 +204,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(P>>9)&BLACK_PIECES&~RANKS[7]&~FILES[7];//capture left
+        PAWN_MOVES=(P>>9)&blackPieces&~RANKS[7]&~FILES[7];//capture left
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -136,7 +213,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(P>>8)&EMPTY&~RANKS[7];//move 1 forward
+        PAWN_MOVES=(P>>8)&empty&~RANKS[7];//move 1 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -145,7 +222,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(P>>16)&EMPTY&(EMPTY>>8)&RANKS[3];//move 2 forward
+        PAWN_MOVES=(P>>16)&empty&(empty>>8)&RANKS[3];//move 2 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -155,7 +232,7 @@ public class ChessBoard {
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
         //y1,y2,Promotion Type,"P"
-        PAWN_MOVES=(P>>7)&BLACK_PIECES&RANKS[7]&~FILES[0];//pawn promotion by capture right
+        PAWN_MOVES=(P>>7)&blackPieces&RANKS[7]&~FILES[0];//pawn promotion by capture right
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -164,7 +241,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(P>>9)&BLACK_PIECES&RANKS[7]&~FILES[7];//pawn promotion by capture left
+        PAWN_MOVES=(P>>9)&blackPieces&RANKS[7]&~FILES[7];//pawn promotion by capture left
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -173,7 +250,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(P>>8)&EMPTY&RANKS[7];//pawn promotion by move 1 forward
+        PAWN_MOVES=(P>>8)&empty&RANKS[7];//pawn promotion by move 1 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -183,30 +260,26 @@ public class ChessBoard {
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
         //y1,y2,Space,"E"
-        if (history.length()>=4 && history.charAt(history.length()-1)==history.charAt(history.length()-3) && Math.abs(history.charAt(history.length()-2)-history.charAt(history.length()-4))==2){
-        	int eFile=history.charAt(history.length()-1)-'0';
-            //en passant right
-            possibility = (P << 1)&p&RANKS[4]&~FILES[0]&FILES[eFile];//shows piece to remove, not the destination
-            if (possibility != 0)
-            {
-                int index=Long.numberOfTrailingZeros(possibility);
-                list+=""+(index%8-1)+(index%8)+" E";
-            }
-            //en passant left
-            possibility = (P >> 1)&p&RANKS[4]&~FILES[7]&FILES[eFile];//shows piece to remove, not the destination
-            if (possibility != 0)
-            {
-                int index=Long.numberOfTrailingZeros(possibility);
-                list+=""+(index%8+1)+(index%8)+" E";
-            }
+        //en passant right
+	    possibility = (P << 1)&~FILES[0]&epSquare;//shows piece to remove, not the destination
+        if (possibility != 0)
+        {
+        	int index=Long.numberOfTrailingZeros(possibility);
+            list+=""+(index%8-1)+(index%8)+"WE";
+        }
+        //en passant left
+        possibility = (P >> 1)&~FILES[7]&epSquare;//shows piece to remove, not the destination
+        if (possibility != 0)
+        {
+            int index=Long.numberOfTrailingZeros(possibility);
+            list+=""+(index%8+1)+(index%8)+"WE";
         }
         return list;
 	}
-
 	public String blackPawnMoves(){
         String list="";
         //x1,y1,x2,y2
-        long PAWN_MOVES=(p<<7)&WHITE_PIECES&~RANKS[0]&~FILES[7];//capture right
+        long PAWN_MOVES=(p<<7)&whitePieces&~RANKS[0]&~FILES[7];//capture right
         long possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -215,7 +288,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(p<<9)&WHITE_PIECES&~RANKS[0]&~FILES[0];//capture left
+        PAWN_MOVES=(p<<9)&whitePieces&~RANKS[0]&~FILES[0];//capture left
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -224,7 +297,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(p<<8)&EMPTY&~RANKS[0];//move 1 forward
+        PAWN_MOVES=(p<<8)&empty&~RANKS[0];//move 1 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -233,7 +306,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(p<<16)&EMPTY&(EMPTY<<8)&RANKS[4];//move 2 forward
+        PAWN_MOVES=(p<<16)&empty&(empty<<8)&RANKS[4];//move 2 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -243,7 +316,7 @@ public class ChessBoard {
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
         //y1,y2,Promotion Type,"P"
-        PAWN_MOVES=(p<<7)&WHITE_PIECES&RANKS[0]&~FILES[7];//pawn promotion by capture right
+        PAWN_MOVES=(p<<7)&whitePieces&RANKS[0]&~FILES[7];//pawn promotion by capture right
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -252,7 +325,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(p<<9)&WHITE_PIECES&RANKS[0]&~FILES[0];//pawn promotion by capture left
+        PAWN_MOVES=(p<<9)&whitePieces&RANKS[0]&~FILES[0];//pawn promotion by capture left
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -261,7 +334,7 @@ public class ChessBoard {
             PAWN_MOVES&=~possibility;
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
-        PAWN_MOVES=(p<<8)&EMPTY&RANKS[0];//pawn promotion by move 1 forward
+        PAWN_MOVES=(p<<8)&empty&RANKS[0];//pawn promotion by move 1 forward
         possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
         {
@@ -271,26 +344,22 @@ public class ChessBoard {
             possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         }
         //y1,y2,Space,"E"
-        if (history.length()>=4 && history.charAt(history.length()-1)==history.charAt(history.length()-3) && Math.abs(history.charAt(history.length()-2)-history.charAt(history.length()-4))==2){
-        	int eFile=history.charAt(history.length()-1)-'0';
-            //en passant right
-            possibility = (p >> 1)&P&RANKS[3]&~FILES[7]&FILES[eFile];//shows piece to remove, not the destination
-            if (possibility != 0)
-            {
-                int index=Long.numberOfTrailingZeros(possibility);
-                list+=""+(index%8+1)+(index%8)+" E";
-            }
-            //en passant left
-            possibility = (p << 1)&P&RANKS[3]&~FILES[0]&FILES[eFile];//shows piece to remove, not the destination
-            if (possibility != 0)
-            {
-                int index=Long.numberOfTrailingZeros(possibility);
-                list+=""+(index%8-1)+(index%8)+" E";
-            }
-        }
+        //en passant right
+        possibility = (p >> 1)&~FILES[7]&epSquare;//shows piece to remove, not the destination
+        if (possibility != 0)
+        {
+        	int index=Long.numberOfTrailingZeros(possibility);
+        	list+=""+(index%8+1)+(index%8)+"BE";
+      	}
+       	//en passant left
+      	possibility = (p << 1)&~FILES[0]&epSquare;//shows piece to remove, not the destination
+      	if (possibility != 0)
+       	{
+          	int index=Long.numberOfTrailingZeros(possibility);
+         	list+=""+(index%8-1)+(index%8)+"BE";
+    	}
         return list;
 	}
-	
 	public String bishopMoves(boolean white, long legal){
 		String list = "";
 		long locations;
@@ -312,7 +381,6 @@ public class ChessBoard {
 		}
 		return list;
 	}
-	
 	public String rookMoves(boolean white, long legal){
 		String list = "";
 		long locations;
@@ -334,7 +402,6 @@ public class ChessBoard {
 		}
 		return list;
 	}
-	
 	public String queenMoves(boolean white, long legal){
 		String list = "";
 		long locations;
@@ -356,7 +423,6 @@ public class ChessBoard {
 		}
 		return list;
 	}
-	
 	public String knightMoves(boolean white, long legal){
 		String list = "";
 		long locations;
@@ -382,7 +448,6 @@ public class ChessBoard {
 		}
 		return list;
 	}
-	
 	public String kingMoves(boolean white, long legal){
 		String list = "";
 		long location;
@@ -403,10 +468,22 @@ public class ChessBoard {
 		}
 		return list;
 	}
+	public String whiteCastleMoves(){
+		String list = "";
+		if (wkCastle == 1 && ((occupied & ((1L<<61)|(1L<<62))) == 0)) list += "WK C";
+		if (wqCastle == 1 && ((occupied & ((1L<<57)|(1L<<58)|(1L<<59))) == 0)) list += "WQ C";
+		return list;
+	}
+	public String blackCastleMoves(){
+		String list = "";
+		if (bkCastle == 1 && ((occupied & ((1L<<5)|(1L<<6))) == 0)) list += "BK C";
+		if (bqCastle == 1 && ((occupied & ((1L<<1)|(1L<<2)|(1L<<3))) == 0)) list += "BQ C";
+		return list;
+	}
 	
 	public long unsafeBlack(){
 		long unsafe;
-		OCCUPIED = P|N|B|R|Q|K|p|n|b|r|q|k;
+		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
 		
 		unsafe = ((P >>> 7) & ~FILES[0]);
 		unsafe |= ((P >>> 9) & ~FILES[7]);
@@ -455,10 +532,9 @@ public class ChessBoard {
 		drawBitboard(unsafe);
 		return unsafe;
 	}
-	
 	public long unsafeWhite(){
 		long unsafe;
-		OCCUPIED = P|N|B|R|Q|K|p|n|b|r|q|k;
+		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
 		
 		unsafe = ((p << 7) & ~FILES[7]);
 		unsafe |= ((p << 9) & ~FILES[0]);
@@ -512,7 +588,6 @@ public class ChessBoard {
 		if (binary.charAt(0) == '0') return Long.parseLong(binary, 2);
 		else return Long.parseLong("1" + binary.substring(2), 2) * 2;
 	}
-	
 	public void drawBoard(){
 		String chessBoard[][] = new String[8][8];
         for (int i=0;i<64;i++) chessBoard[i/8][i%8]=" ";
@@ -530,8 +605,14 @@ public class ChessBoard {
             else if (((q>>i)&1)==1) chessBoard[i/8][i%8]="q";
             else if (((k>>i)&1)==1) chessBoard[i/8][i%8]="k";
         for (int i=0;i<8;i++) System.out.println(Arrays.toString(chessBoard[i]));
+        System.out.println();
+        drawBitboard(epSquare);
+        System.out.println();
+        System.out.println("WK Castle: " + wkCastle);
+        System.out.println("WQ Castle: " + wqCastle);
+        System.out.println("BK Castle: " + bkCastle);
+        System.out.println("BQ Castle: " + bqCastle);
 	}
-	
 	public void drawBitboard(long bitBoard) {
         String chessBoard[][]=new String[8][8];
         for (int i=0;i<64;i++) {
@@ -542,12 +623,36 @@ public class ChessBoard {
             System.out.println(Arrays.toString(chessBoard[i]));
         }
     }
+	public long[] getGameData(){
+		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle,wqCastle,bkCastle,bqCastle};
+	}
+	public void setGameData(long[] data){
+		P = data[0];
+		p = data[1];
+		R = data[2];
+		r = data[3];
+		N = data[4];
+		n = data[5];
+		B = data[6];
+		b = data[7];
+		Q = data[8];
+		q = data[9];
+		K = data[10];
+		k = data[11];
+		epSquare = data[12];
+		wkCastle = data[13];
+		wqCastle = data[14];
+		bkCastle = data[15];
+		bqCastle = data[16];
+	}
 	
 	public static void main(String[] args) {
 		ChessBoard board = new ChessBoard();
 		board.whiteMoves();
 		System.out.println();
-		board.blackMoves();
+		//board.makeMove("WK C");
+		//board.blackMoves();
+		//System.out.println();
+		board.drawBoard();
 	}
-
 }
