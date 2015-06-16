@@ -12,25 +12,22 @@ public class Perft {
 	
 	public static void perft(int depth){
 		maxDepth = depth;
-		ChessBoard board = new ChessBoard();
-		//board.makeMove("6252", true);
-		//board.makeMove("1323", false);
-		//board.makeMove("7340", true);
+		ChessBoard board = new ChessBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
 		board.drawBoard();
 		System.out.println();
-		perft(0, board, true);
-		System.out.println("Total: " + totalCounter);
+		perft(0, board);
+		System.out.println("\nTotal: " + totalCounter);
 	}
 	
-	public static void perft(int depth, ChessBoard board, boolean whiteToMove){
+	public static void perft(int depth, ChessBoard board){
 		String moves;
-		if (whiteToMove) moves = board.whiteMoves();
+		if (board.whiteToMove == 1) moves = board.whiteMoves();
 		else moves = board.blackMoves();
 		long[] gameData = board.getGameData();
 		for (int i = 0; i < moves.length(); i += 4){
-			if (board.makeMove(moves.substring(i, i + 4), whiteToMove) != null){
+			if (board.makeMove(moves.substring(i, i + 4)) != null){
 				if (depth + 1 == maxDepth) subCounter ++;
-				else perft(depth + 1, board, !whiteToMove);
+				else perft(depth + 1, board);
 				if (depth == 0){
 					System.out.println(moveToAlgebra(moves.substring(i, i + 4)) + " " + subCounter);
 					totalCounter += subCounter;
@@ -42,6 +39,10 @@ public class Perft {
 	}
 	
 	public static void main(String[] args) {
-		perft(3);
+		long startTime = System.currentTimeMillis();
+		perft(4);
+		long endTime = System.currentTimeMillis();
+        System.out.println("Time: " + (endTime-startTime) + " milliseconds");
+        System.out.println("Moves/sec : "+(int)(totalCounter / ((endTime-startTime)/1000.0)));
 	}
 }

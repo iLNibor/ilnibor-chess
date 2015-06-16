@@ -11,16 +11,15 @@ public class ChessBoard {
 	final long[] ANTIDIAGS = new long[]{0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
     final long KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
     long whiteLegal, whitePieces, blackLegal, blackPieces, occupied, empty;
-    long wkCastle, wqCastle, bkCastle, bqCastle;
+    long wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove;
 	
 	public ChessBoard(){
 		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = 0;
-		wkCastle = wqCastle = bkCastle = bqCastle = 1;
+		wkCastle = wqCastle = bkCastle = bqCastle = whiteToMove = 1;
 		initiateBoard();
 	}
 	public ChessBoard(String FEN){
-		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = 0;
-		wkCastle = wqCastle = bkCastle = bqCastle = 1;
+		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = wkCastle = wqCastle = bkCastle = bqCastle = whiteToMove = 0;
 		initiateFEN(FEN);
 	}
 	public void initiateBoard(){
@@ -35,7 +34,46 @@ public class ChessBoard {
 		arrayToBitboards(chessBoard);
 	}
 	public void initiateFEN(String FEN){
-		
+		int indexA = 0, indexB = 0;
+		while (FEN.charAt(indexA) != ' '){
+			switch(FEN.charAt(indexA ++)){
+				case 'P': P |= (1L << indexB ++); break;
+				case 'p': p |= (1L << indexB ++); break;
+				case 'N': N |= (1L << indexB ++); break;
+				case 'n': n |= (1L << indexB ++); break;
+				case 'B': B |= (1L << indexB ++); break;
+				case 'b': b |= (1L << indexB ++); break;
+				case 'R': R |= (1L << indexB ++); break;
+				case 'r': r |= (1L << indexB ++); break;
+				case 'Q': Q |= (1L << indexB ++); break;
+				case 'q': q |= (1L << indexB ++); break;
+				case 'K': K |= (1L << indexB ++); break;
+				case 'k': k |= (1L << indexB ++); break;
+				case '/': break;
+				case '1': indexB ++; break;
+				case '2': indexB += 2; break;
+				case '3': indexB += 3; break;
+				case '4': indexB += 4; break;
+				case '5': indexB += 5; break;
+				case '6': indexB += 6; break;
+				case '7': indexB += 7; break;
+				case '8': indexB += 8; break;
+				default: break;
+			}
+		}
+		if (FEN.charAt(++ indexA) == 'w') whiteToMove = 1;
+		indexA += 2;
+		while (FEN.charAt(indexA) != ' '){
+			char temp = FEN.charAt(indexA ++);
+			if (temp == 'K') wkCastle = 1;
+			else if (temp == 'Q') wqCastle = 1;
+			else if (temp == 'k') bkCastle = 1;
+			else if (temp == 'q') bqCastle = 1;
+		}
+		if (FEN.charAt(++ indexA) != '-')
+			epSquare = FILES[FEN.charAt(indexA ++) - 'a'] & RANKS[FEN.charAt(indexA ++) - '1'];
+		if ((epSquare & RANKS[5]) != 0) epSquare = epSquare << 8;
+		else epSquare = epSquare >> 8;
 	}
 	public void arrayToBitboards(String[][] chessBoard){
 		for (int i=0;i<64;i++) {
@@ -59,7 +97,7 @@ public class ChessBoard {
         }
 	}
 	
-	public long[] makeMove(String move, boolean whiteToMove){
+	public long[] makeMove(String move){
 		epSquare = 0;
 		char a = move.charAt(0), bb = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
 		int start, end;
@@ -162,7 +200,8 @@ public class ChessBoard {
 		}
 		else
 			System.out.println("INVALID MOVE");
-		if ((whiteToMove && (K & unsafeWhite()) != 0) || (!whiteToMove && (k & unsafeBlack()) != 0)) return null;
+		if ((whiteToMove == 1 && (K & unsafeWhite()) != 0) || (whiteToMove == 0 && (k & unsafeBlack()) != 0)) return null;
+		whiteToMove = 1 - whiteToMove;
 		return getGameData();
 	}
 	
@@ -474,14 +513,18 @@ public class ChessBoard {
 	}
 	public String whiteCastleMoves(){
 		String list = "";
-		if (wkCastle == 1 && ((occupied & ((1L<<61)|(1L<<62))) == 0)) list += "WK C";
-		if (wqCastle == 1 && ((occupied & ((1L<<57)|(1L<<58)|(1L<<59))) == 0)) list += "WQ C";
+		if ((R & (1L<<63)) == 0) wkCastle = 0;
+		if ((R & (1L<<56)) == 0) wqCastle = 0;
+		if (wkCastle == 1 && ((occupied & ((1L<<61)|(1L<<62))) == 0) && ((unsafeWhite() & ((1L<<60)|(1L<<61))) == 0)) list += "WK C";
+		if (wqCastle == 1 && ((occupied & ((1L<<57)|(1L<<58)|(1L<<59))) == 0) && ((unsafeWhite() & ((1L<<60)|(1L<<59))) == 0)) list += "WQ C";
 		return list;
 	}
 	public String blackCastleMoves(){
 		String list = "";
-		if (bkCastle == 1 && ((occupied & ((1L<<5)|(1L<<6))) == 0)) list += "BK C";
-		if (bqCastle == 1 && ((occupied & ((1L<<1)|(1L<<2)|(1L<<3))) == 0)) list += "BQ C";
+		if ((r & (1L<<7)) == 0) bkCastle = 0;
+		if ((r & (1L<<0)) == 0) bqCastle = 0;
+		if (bkCastle == 1 && ((occupied & ((1L<<5)|(1L<<6))) == 0) && ((unsafeBlack() & ((1L<<4)|(1L<<5))) == 0)) list += "BK C";
+		if (bqCastle == 1 && ((occupied & ((1L<<1)|(1L<<2)|(1L<<3))) == 0) && ((unsafeBlack() & ((1L<<4)|(1L<<3))) == 0)) list += "BQ C";
 		return list;
 	}
 	
@@ -619,7 +662,7 @@ public class ChessBoard {
         }
     }
 	public long[] getGameData(){
-		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle,wqCastle,bkCastle,bqCastle};
+		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle,wqCastle,bkCastle,bqCastle,whiteToMove};
 	}
 	public void setGameData(long[] data){
 		P = data[0];
@@ -639,6 +682,7 @@ public class ChessBoard {
 		wqCastle = data[14];
 		bkCastle = data[15];
 		bqCastle = data[16];
+		whiteToMove = data[17];
 	}
 
 }
