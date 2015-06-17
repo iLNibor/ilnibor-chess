@@ -3,6 +3,7 @@ package ai;
 public class Perft {
 	
 	static int totalCounter, subCounter, maxDepth;
+	static MoveGenerator board;
 
 	public static String moveToAlgebra(String move){
 		if (!Character.isDigit(move.charAt(3))) return move;
@@ -12,22 +13,22 @@ public class Perft {
 	
 	public static void perft(int depth){
 		maxDepth = depth;
-		ChessBoard board = new ChessBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+		board = new MoveGenerator("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
 		board.drawBoard();
 		System.out.println();
-		perft(0, board);
+		perft(0, board.getGameData());
 		System.out.println("\nTotal: " + totalCounter);
 	}
 	
-	public static void perft(int depth, ChessBoard board){
+	public static void perft(int depth, long[] gameData){
 		String moves;
+		board.setGameData(gameData);
 		if (board.whiteToMove == 1) moves = board.whiteMoves();
 		else moves = board.blackMoves();
-		long[] gameData = board.getGameData();
 		for (int i = 0; i < moves.length(); i += 4){
 			if (board.makeMove(moves.substring(i, i + 4)) != null){
 				if (depth + 1 == maxDepth) subCounter ++;
-				else perft(depth + 1, board);
+				else perft(depth + 1, board.getGameData());
 				if (depth == 0){
 					System.out.println(moveToAlgebra(moves.substring(i, i + 4)) + " " + subCounter);
 					totalCounter += subCounter;

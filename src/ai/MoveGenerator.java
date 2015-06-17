@@ -2,103 +2,16 @@ package ai;
 
 import java.util.Arrays;
 
-public class ChessBoard {
+public class MoveGenerator {
 
-	long P,p,R,r,N,n,B,b,Q,q,K,k,epSquare;
-	final long[] FILES = new long[]{72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L, 1157442765409226768L, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L};
-	final long[] RANKS = new long[]{-72057594037927936L, 71776119061217280L, 280375465082880L, 1095216660480L, 4278190080L, 16711680L, 65280L, 255L};
-	final long[] DIAGS = new long[]{0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L, 0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L, 0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L};
-	final long[] ANTIDIAGS = new long[]{0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
-    final long KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
-    long whiteLegal, whitePieces, blackLegal, blackPieces, occupied, empty;
-    long wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove;
-	
-	public ChessBoard(){
-		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = 0;
-		wkCastle = wqCastle = bkCastle = bqCastle = whiteToMove = 1;
-		initiateBoard();
-	}
-	public ChessBoard(String FEN){
-		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = wkCastle = wqCastle = bkCastle = bqCastle = whiteToMove = 0;
-		initiateFEN(FEN);
-	}
-	public void initiateBoard(){
-		String chessBoard[][]={{"r","n","b","q","k","b","n","r"},
-							   {"p","p","p","p","p","p","p","p"},
-							   {" "," "," "," "," "," "," "," "},
-							   {" "," "," "," "," "," "," "," "},
-							   {" "," "," "," "," "," "," "," "},
-							   {" "," "," "," "," "," "," "," "},
-							   {"P","P","P","P","P","P","P","P"},
-							   {"R","N","B","Q","K","B","N","R"}};
-		arrayToBitboards(chessBoard);
-	}
-	public void initiateFEN(String FEN){
-		int indexA = 0, indexB = 0;
-		while (FEN.charAt(indexA) != ' '){
-			switch(FEN.charAt(indexA ++)){
-				case 'P': P |= (1L << indexB ++); break;
-				case 'p': p |= (1L << indexB ++); break;
-				case 'N': N |= (1L << indexB ++); break;
-				case 'n': n |= (1L << indexB ++); break;
-				case 'B': B |= (1L << indexB ++); break;
-				case 'b': b |= (1L << indexB ++); break;
-				case 'R': R |= (1L << indexB ++); break;
-				case 'r': r |= (1L << indexB ++); break;
-				case 'Q': Q |= (1L << indexB ++); break;
-				case 'q': q |= (1L << indexB ++); break;
-				case 'K': K |= (1L << indexB ++); break;
-				case 'k': k |= (1L << indexB ++); break;
-				case '/': break;
-				case '1': indexB ++; break;
-				case '2': indexB += 2; break;
-				case '3': indexB += 3; break;
-				case '4': indexB += 4; break;
-				case '5': indexB += 5; break;
-				case '6': indexB += 6; break;
-				case '7': indexB += 7; break;
-				case '8': indexB += 8; break;
-				default: break;
-			}
-		}
-		if (FEN.charAt(++ indexA) == 'w') whiteToMove = 1;
-		indexA += 2;
-		while (FEN.charAt(indexA) != ' '){
-			char temp = FEN.charAt(indexA ++);
-			if (temp == 'K') wkCastle = 1;
-			else if (temp == 'Q') wqCastle = 1;
-			else if (temp == 'k') bkCastle = 1;
-			else if (temp == 'q') bqCastle = 1;
-		}
-		if (FEN.charAt(++ indexA) != '-')
-			epSquare = FILES[FEN.charAt(indexA ++) - 'a'] & RANKS[FEN.charAt(indexA ++) - '1'];
-		if ((epSquare & RANKS[5]) != 0) epSquare = epSquare << 8;
-		else epSquare = epSquare >> 8;
-	}
-	public void arrayToBitboards(String[][] chessBoard){
-		for (int i=0;i<64;i++) {
-            String binary="0000000000000000000000000000000000000000000000000000000000000000";
-            binary = binary.substring(i + 1) + "1" + binary.substring(0, i);
-            long temp = binaryToBitboard(binary);
-            switch (chessBoard[i/8][i%8]){
-                case "P": P += temp; break;
-                case "N": N += temp; break;
-                case "B": B += temp; break;
-                case "R": R += temp; break;
-                case "Q": Q += temp; break;
-                case "K": K += temp; break;
-                case "p": p += temp; break;
-                case "n": n += temp; break;
-                case "b": b += temp; break;
-                case "r": r += temp; break;
-                case "q": q += temp; break;
-                case "k": k += temp; break;
-            }
-        }
-	}
-	
-	public long[] makeMove(String move){
-		epSquare = 0;
+	static final long[] FILES = new long[]{72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L, 1157442765409226768L, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L};
+	static final long[] RANKS = new long[]{-72057594037927936L, 71776119061217280L, 280375465082880L, 1095216660480L, 4278190080L, 16711680L, 65280L, 255L};
+	static final long[] DIAGS = new long[]{0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L, 0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L, 0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L};
+	static final long[] ANTIDIAGS = new long[]{0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
+	static final long KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
+
+	public static long[] makeMove(String move, long[] data){
+		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], epSquare = 0, wkCastle = data[13], wqCastle = data[14], bkCastle = data[15], bqCastle = data[16], whiteToMove = data[17];
 		char a = move.charAt(0), bb = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
 		int start, end;
 		if (Character.isDigit(d)){
@@ -200,44 +113,40 @@ public class ChessBoard {
 		}
 		else
 			System.out.println("INVALID MOVE");
-		if ((whiteToMove == 1 && (K & unsafeWhite()) != 0) || (whiteToMove == 0 && (k & unsafeBlack()) != 0)) return null;
+		long occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
+		if ((whiteToMove == 1 && (K & unsafeWhite(p,n,b,r,q,k,occupied)) != 0) || (whiteToMove == 0 && (k & unsafeBlack(P,N,B,R,Q,K,occupied)) != 0)) return null;
 		whiteToMove = 1 - whiteToMove;
-		return getGameData();
+		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove};
+	}
+	public static String getMoves(long[] data){
+		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], epSquare = data[12], wkCastle = data[13], wqCastle = data[14], bkCastle = data[15], bqCastle = data[16], whiteToMove = data[17];
+		if (whiteToMove == 1) return whiteMoves(P,N,B,R,Q,K,p,n,b,r,q,k,epSquare,wkCastle,wqCastle);
+		else return blackMoves(P,N,B,R,Q,K,p,n,b,r,q,k,epSquare,bkCastle,bqCastle);
 	}
 	
-	public long linearMoves(int origin){
+	public static long linearMoves(int origin, long occupied){
 		long binaryOrigin = 1L << origin;
 		long horizontal = (occupied - 2 * binaryOrigin) ^ Long.reverse(Long.reverse(occupied) - 2 * Long.reverse(binaryOrigin));
         long vertical = ((occupied & FILES[origin%8]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & FILES[origin%8]) - (2 * Long.reverse(binaryOrigin)));
         return (horizontal & RANKS[7 - origin/8]) | (vertical & FILES[origin%8]);
 	}
-	public long diagMoves(int origin){
+	public static long diagMoves(int origin, long occupied){
 		long binaryOrigin = 1L << origin;
         long diag = ((occupied & DIAGS[(origin/8) + (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & DIAGS[(origin/8) + (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
         long antidiag = ((occupied & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * binaryOrigin)) ^ Long.reverse(Long.reverse(occupied & ANTIDIAGS[(origin/8) + 7 - (origin%8)]) - (2 * Long.reverse(binaryOrigin)));
         return (diag & DIAGS[(origin/8) + (origin%8)]) | (antidiag & ANTIDIAGS[(origin/8) + 7 - (origin%8)]);
 	}
-	public String whiteMoves(){
-		whiteLegal = ~(P|R|N|B|Q|K|k);
-		blackPieces = p|r|n|b|q;
-		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
-        empty = ~occupied;
+	public static String whiteMoves(long P, long N, long B, long R, long Q, long K, long p, long n, long b, long r, long q, long k, long epSquare, long wkCastle, long wqCastle){
+		long whiteLegal = ~(P|R|N|B|Q|K|k), blackPieces = p|r|n|b|q, occupied = P|N|B|R|Q|K|p|n|b|r|q|k, empty = ~occupied;
         
-        String moves = whitePawnMoves() + bishopMoves(true, whiteLegal) + rookMoves(true, whiteLegal) + queenMoves(true, whiteLegal) + knightMoves(true, whiteLegal) + kingMoves(true, whiteLegal) + whiteCastleMoves();
-		return moves;
-	}
-	public String blackMoves(){
-		blackLegal = ~(p|r|n|b|q|k|K);
-		whitePieces = P|R|N|B|Q;
-		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
-        empty = ~occupied;
+        String list = "";
+        long location, moves;
         
-        String moves = blackPawnMoves() + bishopMoves(false, blackLegal) + rookMoves(false, blackLegal) + queenMoves(false, blackLegal) + knightMoves(false, blackLegal) + kingMoves(false, blackLegal) + blackCastleMoves();
-        return moves;
-	}
-	public String whitePawnMoves(){
-        String list="";
-        //x1,y1,x2,y2
+        if ((R & (1L<<63)) == 0) wkCastle = 0;
+		if ((R & (1L<<56)) == 0) wqCastle = 0;
+		if (wkCastle == 1 && ((occupied & ((1L<<61)|(1L<<62))) == 0) && ((unsafeWhite(p,n,b,r,q,k, occupied) & ((1L<<60)|(1L<<61))) == 0)) list += "WK C";
+		if (wqCastle == 1 && ((occupied & ((1L<<57)|(1L<<58)|(1L<<59))) == 0) && ((unsafeWhite(p,n,b,r,q,k, occupied) & ((1L<<60)|(1L<<59))) == 0)) list += "WQ C";
+        
         long PAWN_MOVES=(P>>7)&blackPieces&~RANKS[7]&~FILES[0];//capture right
         long possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
@@ -317,11 +226,97 @@ public class ChessBoard {
             int index=Long.numberOfTrailingZeros(possibility);
             list+=""+(index%8+1)+(index%8)+"WE";
         }
-        return list;
+        
+		location = B & ~(B - 1);
+		while (location != 0){
+			int indexA = Long.numberOfTrailingZeros(location);
+			moves = diagMoves(indexA, occupied) & whiteLegal;
+			long move = moves & ~(moves - 1);
+			while (move != 0){
+				int indexB = Long.numberOfTrailingZeros(move);
+				list += "" + (indexA/8) + (indexA%8) + (indexB/8) + (indexB%8);
+				moves &= ~move;
+				move = moves & ~(moves - 1);
+			}
+			B &= ~location;
+			location = B & ~(B - 1);
+		}
+        
+		location = R & ~(R - 1);
+		while (location != 0){
+			int indexA = Long.numberOfTrailingZeros(location);
+			moves = linearMoves(indexA, occupied) & whiteLegal;
+			long move = moves & ~(moves - 1);
+			while (move != 0){
+				int indexB = Long.numberOfTrailingZeros(move);
+				list += "" + (indexA/8) + (indexA%8) + (indexB/8) + (indexB%8);
+				moves &= ~move;
+				move = moves & ~(moves - 1);
+			}
+			R &= ~location;
+			location = R & ~(R - 1);
+		}
+		
+		location = Q & ~(Q - 1);
+		while (location != 0){
+			int indexA = Long.numberOfTrailingZeros(location);
+			moves = (linearMoves(indexA, occupied) | diagMoves(indexA, occupied)) & whiteLegal;
+			long move = moves & ~(moves - 1);
+			while (move != 0){
+				int indexB = Long.numberOfTrailingZeros(move);
+				list += "" + (indexA/8) + (indexA%8) + (indexB/8) + (indexB%8);
+				moves &= ~move;
+				move = moves & ~(moves - 1);
+			}
+			Q &= ~location;
+			location = Q & ~(Q - 1);
+		}
+		
+		location = N & ~(N - 1);
+		while (location != 0){
+			int index = Long.numberOfTrailingZeros(location);
+			if (index > 18) moves = KNIGHT_SPAN << (index - 18);
+			else moves = KNIGHT_SPAN >> (18 - index);
+			if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & whiteLegal;
+			else moves &= ~(FILES[0] | FILES[1]) & whiteLegal;
+			long move = moves & ~(moves - 1);
+			while (move != 0){
+				int indexB = Long.numberOfTrailingZeros(move);
+				list += "" + (index/8) + (index%8) + (indexB/8) + (indexB%8);
+				moves &= ~move;
+				move = moves & ~(moves - 1);
+			}
+			N &= ~location;
+			location = N & ~(N - 1);
+		}
+		
+		location = K;
+		int index = Long.numberOfTrailingZeros(location);
+		if (index > 9) moves = KING_SPAN << (index - 9);
+		else moves = KING_SPAN >> (9 - index);
+		if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & whiteLegal;
+		else moves &= ~(FILES[0] | FILES[1]) & whiteLegal;
+		long move = moves & ~(moves - 1);
+		while (move != 0){
+			int indexB = Long.numberOfTrailingZeros(move);
+			list += "" + (index/8) + (index%8) + (indexB/8) + (indexB%8);
+			moves &= ~move;
+			move = moves & ~(moves - 1);
+		}
+		
+		return list;
 	}
-	public String blackPawnMoves(){
-        String list="";
-        //x1,y1,x2,y2
+	public static String blackMoves(long P, long N, long B, long R, long Q, long K, long p, long n, long b, long r, long q, long k, long epSquare, long bkCastle, long bqCastle){
+		long blackLegal = ~(p|r|n|b|q|k|K), whitePieces = P|R|N|B|Q, occupied = P|N|B|R|Q|K|p|n|b|r|q|k, empty = ~occupied;
+        
+		String list = "";
+        long location, moves;
+        
+        if ((r & (1L<<7)) == 0) bkCastle = 0;
+		if ((r & (1L<<0)) == 0) bqCastle = 0;
+		if (bkCastle == 1 && ((occupied & ((1L<<5)|(1L<<6))) == 0) && ((unsafeBlack(P,N,B,R,Q,K, occupied) & ((1L<<4)|(1L<<5))) == 0)) list += "BK C";
+		if (bqCastle == 1 && ((occupied & ((1L<<1)|(1L<<2)|(1L<<3))) == 0) && ((unsafeBlack(P,N,B,R,Q,K, occupied) & ((1L<<4)|(1L<<3))) == 0)) list += "BQ C";
+        
         long PAWN_MOVES=(p<<7)&whitePieces&~RANKS[0]&~FILES[7];//capture right
         long possibility=PAWN_MOVES&~(PAWN_MOVES-1);
         while (possibility != 0)
@@ -401,17 +396,11 @@ public class ChessBoard {
           	int index=Long.numberOfTrailingZeros(possibility);
          	list+=""+(index%8-1)+(index%8)+"BE";
     	}
-        return list;
-	}
-	public String bishopMoves(boolean white, long legal){
-		String list = "";
-		long locations;
-		if (white) locations = B;
-		else locations = b;
-		long location = locations & ~(locations - 1);
+      	
+      	location = b & ~(b - 1);
 		while (location != 0){
 			int indexA = Long.numberOfTrailingZeros(location);
-			long moves = diagMoves(indexA) & legal;
+			moves = diagMoves(indexA, occupied) & blackLegal;
 			long move = moves & ~(moves - 1);
 			while (move != 0){
 				int indexB = Long.numberOfTrailingZeros(move);
@@ -419,20 +408,14 @@ public class ChessBoard {
 				moves &= ~move;
 				move = moves & ~(moves - 1);
 			}
-			locations &= ~location;
-			location = locations & ~(locations - 1);
+			b &= ~location;
+			location = b & ~(b - 1);
 		}
-		return list;
-	}
-	public String rookMoves(boolean white, long legal){
-		String list = "";
-		long locations;
-		if (white) locations = R;
-		else locations = r;
-		long location = locations & ~(locations - 1);
+        
+		location = r & ~(r - 1);
 		while (location != 0){
 			int indexA = Long.numberOfTrailingZeros(location);
-			long moves = linearMoves(indexA) & legal;
+			moves = linearMoves(indexA, occupied) & blackLegal;
 			long move = moves & ~(moves - 1);
 			while (move != 0){
 				int indexB = Long.numberOfTrailingZeros(move);
@@ -440,20 +423,14 @@ public class ChessBoard {
 				moves &= ~move;
 				move = moves & ~(moves - 1);
 			}
-			locations &= ~location;
-			location = locations & ~(locations - 1);
+			r &= ~location;
+			location = r & ~(r - 1);
 		}
-		return list;
-	}
-	public String queenMoves(boolean white, long legal){
-		String list = "";
-		long locations;
-		if (white) locations = Q;
-		else locations = q;
-		long location = locations & ~(locations - 1);
+		
+		location = q & ~(q - 1);
 		while (location != 0){
 			int indexA = Long.numberOfTrailingZeros(location);
-			long moves = (linearMoves(indexA) | diagMoves(indexA)) & legal;
+			moves = (linearMoves(indexA, occupied) | diagMoves(indexA, occupied)) & blackLegal;
 			long move = moves & ~(moves - 1);
 			while (move != 0){
 				int indexB = Long.numberOfTrailingZeros(move);
@@ -461,24 +438,17 @@ public class ChessBoard {
 				moves &= ~move;
 				move = moves & ~(moves - 1);
 			}
-			locations &= ~location;
-			location = locations & ~(locations - 1);
+			q &= ~location;
+			location = q & ~(q - 1);
 		}
-		return list;
-	}
-	public String knightMoves(boolean white, long legal){
-		String list = "";
-		long locations;
-		if (white) locations = N;
-		else locations = n;
-		long location = locations & ~(locations - 1);
+		
+		location = n & ~(n - 1);
 		while (location != 0){
 			int index = Long.numberOfTrailingZeros(location);
-			long moves;
 			if (index > 18) moves = KNIGHT_SPAN << (index - 18);
 			else moves = KNIGHT_SPAN >> (18 - index);
-			if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & legal;
-			else moves &= ~(FILES[0] | FILES[1]) & legal;
+			if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & blackLegal;
+			else moves &= ~(FILES[0] | FILES[1]) & blackLegal;
 			long move = moves & ~(moves - 1);
 			while (move != 0){
 				int indexB = Long.numberOfTrailingZeros(move);
@@ -486,22 +456,16 @@ public class ChessBoard {
 				moves &= ~move;
 				move = moves & ~(moves - 1);
 			}
-			locations &= ~location;
-			location = locations & ~(locations - 1);
+			n &= ~location;
+			location = n & ~(n - 1);
 		}
-		return list;
-	}
-	public String kingMoves(boolean white, long legal){
-		String list = "";
-		long location;
-		if (white) location = K;
-		else location = k;
+		
+		location = k;
 		int index = Long.numberOfTrailingZeros(location);
-		long moves;
 		if (index > 9) moves = KING_SPAN << (index - 9);
 		else moves = KING_SPAN >> (9 - index);
-		if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & legal;
-		else moves &= ~(FILES[0] | FILES[1]) & legal;
+		if (index % 8 < 4) moves &= ~(FILES[6] | FILES[7]) & blackLegal;
+		else moves &= ~(FILES[0] | FILES[1]) & blackLegal;
 		long move = moves & ~(moves - 1);
 		while (move != 0){
 			int indexB = Long.numberOfTrailingZeros(move);
@@ -509,28 +473,11 @@ public class ChessBoard {
 			moves &= ~move;
 			move = moves & ~(moves - 1);
 		}
-		return list;
+		
+      	return list;
 	}
-	public String whiteCastleMoves(){
-		String list = "";
-		if ((R & (1L<<63)) == 0) wkCastle = 0;
-		if ((R & (1L<<56)) == 0) wqCastle = 0;
-		if (wkCastle == 1 && ((occupied & ((1L<<61)|(1L<<62))) == 0) && ((unsafeWhite() & ((1L<<60)|(1L<<61))) == 0)) list += "WK C";
-		if (wqCastle == 1 && ((occupied & ((1L<<57)|(1L<<58)|(1L<<59))) == 0) && ((unsafeWhite() & ((1L<<60)|(1L<<59))) == 0)) list += "WQ C";
-		return list;
-	}
-	public String blackCastleMoves(){
-		String list = "";
-		if ((r & (1L<<7)) == 0) bkCastle = 0;
-		if ((r & (1L<<0)) == 0) bqCastle = 0;
-		if (bkCastle == 1 && ((occupied & ((1L<<5)|(1L<<6))) == 0) && ((unsafeBlack() & ((1L<<4)|(1L<<5))) == 0)) list += "BK C";
-		if (bqCastle == 1 && ((occupied & ((1L<<1)|(1L<<2)|(1L<<3))) == 0) && ((unsafeBlack() & ((1L<<4)|(1L<<3))) == 0)) list += "BQ C";
-		return list;
-	}
-	
-	public long unsafeBlack(){
+	public static long unsafeBlack(long P, long N, long B, long R, long Q, long K, long occupied){
 		long unsafe;
-		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
 		
 		unsafe = ((P >>> 7) & ~FILES[0]);
 		unsafe |= ((P >>> 9) & ~FILES[7]);
@@ -554,7 +501,7 @@ public class ChessBoard {
 		location = locations & ~(locations - 1);
 		while (location != 0){
 			int index = Long.numberOfTrailingZeros(location);
-			moves = diagMoves(index);
+			moves = diagMoves(index, occupied);
 			unsafe |= moves;
 			locations &= ~location;
 			location = locations & ~(locations - 1);
@@ -564,7 +511,7 @@ public class ChessBoard {
 		location = locations & ~(locations - 1);
 		while (location != 0){
 			int index = Long.numberOfTrailingZeros(location);
-			moves = linearMoves(index);
+			moves = linearMoves(index, occupied);
 			unsafe |= moves;
 			locations &= ~location;
 			location = locations & ~(locations - 1);
@@ -578,9 +525,8 @@ public class ChessBoard {
 		unsafe |= moves;
 		return unsafe;
 	}
-	public long unsafeWhite(){
+	public static long unsafeWhite(long p, long n, long b, long r, long q, long k, long occupied){
 		long unsafe;
-		occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
 		
 		unsafe = ((p << 7) & ~FILES[7]);
 		unsafe |= ((p << 9) & ~FILES[0]);
@@ -604,7 +550,7 @@ public class ChessBoard {
 		location = locations & ~(locations - 1);
 		while (location != 0){
 			int index = Long.numberOfTrailingZeros(location);
-			moves = diagMoves(index);
+			moves = diagMoves(index, occupied);
 			unsafe |= moves;
 			locations &= ~location;
 			location = locations & ~(locations - 1);
@@ -614,7 +560,7 @@ public class ChessBoard {
 		location = locations & ~(locations - 1);
 		while (location != 0){
 			int index = Long.numberOfTrailingZeros(location);
-			moves = linearMoves(index);
+			moves = linearMoves(index, occupied);
 			unsafe |= moves;
 			locations &= ~location;
 			location = locations & ~(locations - 1);
@@ -628,30 +574,8 @@ public class ChessBoard {
 		unsafe |= moves;
 		return unsafe;
 	}
-	
-	public long binaryToBitboard(String binary){
-		if (binary.charAt(0) == '0') return Long.parseLong(binary, 2);
-		else return Long.parseLong("1" + binary.substring(2), 2) * 2;
-	}
-	public void drawBoard(){
-		String chessBoard[][] = new String[8][8];
-        for (int i=0;i<64;i++) chessBoard[i/8][i%8]=" ";
-        for (int i=0;i<64;i++)
-            if (((P>>i)&1)==1) chessBoard[i/8][i%8]="P";
-            else if (((N>>i)&1)==1) chessBoard[i/8][i%8]="N";
-            else if (((B>>i)&1)==1) chessBoard[i/8][i%8]="B";
-            else if (((R>>i)&1)==1) chessBoard[i/8][i%8]="R";
-            else if (((Q>>i)&1)==1) chessBoard[i/8][i%8]="Q";
-            else if (((K>>i)&1)==1) chessBoard[i/8][i%8]="K";
-            else if (((p>>i)&1)==1) chessBoard[i/8][i%8]="p";
-            else if (((n>>i)&1)==1) chessBoard[i/8][i%8]="n";
-            else if (((b>>i)&1)==1) chessBoard[i/8][i%8]="b";
-            else if (((r>>i)&1)==1) chessBoard[i/8][i%8]="r";
-            else if (((q>>i)&1)==1) chessBoard[i/8][i%8]="q";
-            else if (((k>>i)&1)==1) chessBoard[i/8][i%8]="k";
-        for (int i=0;i<8;i++) System.out.println(Arrays.toString(chessBoard[i]));
-	}
-	public void drawBitboard(long bitBoard) {
+
+	public static void drawBitboard(long bitBoard) {
         String chessBoard[][]=new String[8][8];
         for (int i=0;i<64;i++) {
             if (((bitBoard>>>i)&1)==1) chessBoard[i/8][i%8]="X";
@@ -661,28 +585,4 @@ public class ChessBoard {
             System.out.println(Arrays.toString(chessBoard[i]));
         }
     }
-	public long[] getGameData(){
-		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle,wqCastle,bkCastle,bqCastle,whiteToMove};
-	}
-	public void setGameData(long[] data){
-		P = data[0];
-		p = data[1];
-		R = data[2];
-		r = data[3];
-		N = data[4];
-		n = data[5];
-		B = data[6];
-		b = data[7];
-		Q = data[8];
-		q = data[9];
-		K = data[10];
-		k = data[11];
-		epSquare = data[12];
-		wkCastle = data[13];
-		wqCastle = data[14];
-		bkCastle = data[15];
-		bqCastle = data[16];
-		whiteToMove = data[17];
-	}
-
 }
