@@ -1,10 +1,16 @@
 package ai;
 
 import java.util.Arrays;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BoardTools {
 	
 	static int totalCounter, subCounter, maxDepth;
+	static AtomicInteger iter = new AtomicInteger(0);
 	
 	public static long[] initiateStandard(){
 		return initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
@@ -128,43 +134,76 @@ public class BoardTools {
 		drawBoard(data);
 		System.out.println();
 		long startTime = System.currentTimeMillis();
+		
+		BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
+		ThreadPoolExecutor engine = new ThreadPoolExecutor(4, 6, 1, TimeUnit.SECONDS, jobs);
+		
 		String moves = MoveGenerator.getMoves(data);
 		for (int i = 0; i < moves.length(); i += 4){
 			long[] newData = MoveGenerator.makeMove(moves.substring(i, i + 4), data);
-			if (newData != null){
-				PerftThread thread = new PerftThread(newData);
-				thread.start();
-			}
+			if (newData != null)
+				engine.execute(new PerftJob(newData));
 		}
-		Thread.sleep(4000);
+		
+		engine.shutdown();
+		engine.awaitTermination(1, TimeUnit.MINUTES);
+		
 		long endTime = System.currentTimeMillis();
-		System.out.println("\nTotal: " + totalCounter);
+		
+		System.out.println("\nTotal: " + iter.get());
 		System.out.println("Time: " + (endTime-startTime) + " milliseconds");
-        System.out.println("Moves/sec : "+(int)(totalCounter / ((endTime-startTime)/1000.0)));
+        System.out.println("Moves/sec : "+(int)(iter.get() / ((endTime-startTime)/1000.0)));
 	}
-	static class PerftThread extends Thread{
+	
+	public static void benchmark(int depth) throws InterruptedException{
+		maxDepth = depth;
+		long[] data = initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+		String moves = MoveGenerator.getMoves(data);
+		
+		for (int i = 1; i <= 25; i ++){
+			long startTime = System.currentTimeMillis();
+			
+			BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
+			ThreadPoolExecutor engine = new ThreadPoolExecutor(i, i, 1, TimeUnit.SECONDS, jobs);
+			for (int j = 0; j < moves.length(); j += 4){
+				long[] newData = MoveGenerator.makeMove(moves.substring(j, j + 4), data);
+				if (newData != null)
+					engine.execute(new PerftJob(newData));
+			}
+			
+			engine.shutdown();
+			engine.awaitTermination(1, TimeUnit.MINUTES);
+			
+			long endTime = System.currentTimeMillis();
+			
+			System.out.println(i + " threads:\t" + (endTime-startTime)/1000.0 + " seconds");
+		}
+	}
+	
+	static class PerftJob implements Runnable{
 		long[] data;
-		public PerftThread(long[] data){
+		public PerftJob(long[] data){
 			this.data = data;
 		}
 		public void run(){
-			
-			perft(1, data);
-			System.out.println("HI");
+			iter.addAndGet(perft(1, data));
 		}
-		public void perft(int depth, long[] data){
+		public int perft(int depth, long[] data){
 			String moves = MoveGenerator.getMoves(data);
+			int counter = 0;
 			for (int i = 0; i < moves.length(); i += 4){
 				long[] newData = MoveGenerator.makeMove(moves.substring(i, i + 4), data);
 				if (newData != null)
-					if (depth + 1 == maxDepth) totalCounter ++;
-					else perft(depth + 1, newData);
+					if (depth + 1 == maxDepth) counter ++;
+					else counter += perft(depth + 1, newData);
 			}
+			return counter;
 		}
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6);
-		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3);
+		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 6);
+		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 6);
+		//benchmark(5);
 	}
 }
