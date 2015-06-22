@@ -101,8 +101,10 @@ public class BoardTools {
 		String moveString = "" + (char)(move.charAt(1) + 49) + ('8' - move.charAt(0)) + (char)(move.charAt(3) + 49) + ('8' - move.charAt(2));
 		return moveString;
 	}
+	
 	public static void perft(String FEN, int depth){
 		maxDepth = depth;
+		totalCounter = 0;
 		long[] data = initiateFEN(FEN);
 		drawBoard(data);
 		System.out.println();
@@ -121,7 +123,7 @@ public class BoardTools {
 				if (depth + 1 == maxDepth) subCounter ++;
 				else perft(depth + 1, newData);
 				if (depth == 0){
-					System.out.println(moveToAlgebra(moves.substring(i, i + 4)) + " " + subCounter);
+					//System.out.println(moveToAlgebra(moves.substring(i, i + 4)) + " " + subCounter);
 					totalCounter += subCounter;
 					subCounter = 0;
 				}
@@ -130,13 +132,14 @@ public class BoardTools {
 	}
 	public static void perftConcurrency(String FEN, int depth) throws InterruptedException{
 		maxDepth = depth;
+		totalCounter = 0;
 		long[] data = initiateFEN(FEN);
 		drawBoard(data);
 		System.out.println();
 		long startTime = System.currentTimeMillis();
 		
 		BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
-		ThreadPoolExecutor engine = new ThreadPoolExecutor(4, 6, 1, TimeUnit.SECONDS, jobs);
+		ThreadPoolExecutor engine = new ThreadPoolExecutor(8, 8, 1, TimeUnit.SECONDS, jobs);
 		
 		String moves = MoveGenerator.getMoves(data);
 		for (int i = 0; i < moves.length(); i += 4){
@@ -146,7 +149,7 @@ public class BoardTools {
 		}
 		
 		engine.shutdown();
-		engine.awaitTermination(1, TimeUnit.MINUTES);
+		engine.awaitTermination(10, TimeUnit.MINUTES);
 		
 		long endTime = System.currentTimeMillis();
 		
@@ -154,32 +157,6 @@ public class BoardTools {
 		System.out.println("Time: " + (endTime-startTime) + " milliseconds");
         System.out.println("Moves/sec : "+(int)(iter.get() / ((endTime-startTime)/1000.0)));
 	}
-	
-	public static void benchmark(int depth) throws InterruptedException{
-		maxDepth = depth;
-		long[] data = initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
-		String moves = MoveGenerator.getMoves(data);
-		
-		for (int i = 1; i <= 25; i ++){
-			long startTime = System.currentTimeMillis();
-			
-			BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
-			ThreadPoolExecutor engine = new ThreadPoolExecutor(i, i, 1, TimeUnit.SECONDS, jobs);
-			for (int j = 0; j < moves.length(); j += 4){
-				long[] newData = MoveGenerator.makeMove(moves.substring(j, j + 4), data);
-				if (newData != null)
-					engine.execute(new PerftJob(newData));
-			}
-			
-			engine.shutdown();
-			engine.awaitTermination(1, TimeUnit.MINUTES);
-			
-			long endTime = System.currentTimeMillis();
-			
-			System.out.println(i + " threads:\t" + (endTime-startTime)/1000.0 + " seconds");
-		}
-	}
-	
 	static class PerftJob implements Runnable{
 		long[] data;
 		public PerftJob(long[] data){
@@ -200,9 +177,36 @@ public class BoardTools {
 			return counter;
 		}
 	}
+	public static void benchmark(int depth) throws InterruptedException{
+		maxDepth = depth;
+		long[] data = initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+		String moves = MoveGenerator.getMoves(data);
+		
+		for (int i = 1; i <= 25; i ++){
+			iter.set(0);
+			long startTime = System.currentTimeMillis();
+			
+			BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
+			ThreadPoolExecutor engine = new ThreadPoolExecutor(i, i, 1, TimeUnit.SECONDS, jobs);
+			for (int j = 0; j < moves.length(); j += 4){
+				long[] newData = MoveGenerator.makeMove(moves.substring(j, j + 4), data);
+				if (newData != null)
+					engine.execute(new PerftJob(newData));
+			}
+			
+			engine.shutdown();
+			engine.awaitTermination(1, TimeUnit.MINUTES);
+			
+			long endTime = System.currentTimeMillis();
+			
+			System.out.println(i + " threads:\t" + (endTime-startTime)/1000.0 + " seconds");
+		}
+	}
+	
 	
 	public static void main(String[] args) throws InterruptedException {
-		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 6);
+		drawBitboard(-9187201950435737472L);
+		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 5);
 		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 6);
 		//benchmark(5);
 	}

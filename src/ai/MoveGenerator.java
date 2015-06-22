@@ -1,7 +1,5 @@
 package ai;
 
-import java.util.Arrays;
-
 public class MoveGenerator {
 
 	static final long[] FILES = new long[]{72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L, 1157442765409226768L, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L};
@@ -575,14 +573,4 @@ public class MoveGenerator {
 		return unsafe;
 	}
 
-	public static void drawBitboard(long bitBoard) {
-        String chessBoard[][]=new String[8][8];
-        for (int i=0;i<64;i++) {
-            if (((bitBoard>>>i)&1)==1) chessBoard[i/8][i%8]="X";
-            else chessBoard[i/8][i%8]=" ";
-        }
-        for (int i=0;i<8;i++) {
-            System.out.println(Arrays.toString(chessBoard[i]));
-        }
-    }
 }
