@@ -2,12 +2,20 @@ package ai;
 
 public class MoveGenerator {
 
+	// Bitboards consisting of all files from left to right
 	static final long[] FILES = new long[]{72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L, 1157442765409226768L, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L};
+	// Bitboards consisting of all ranks from bottom to top
 	static final long[] RANKS = new long[]{-72057594037927936L, 71776119061217280L, 280375465082880L, 1095216660480L, 4278190080L, 16711680L, 65280L, 255L};
+	// Bitboards consisting of all diagonals from top-left to bottom-right
 	static final long[] DIAGS = new long[]{0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L, 0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L, 0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L};
+	// Bitboards consisting of all anti-diagonals from top-right to bottom-left
 	static final long[] ANTIDIAGS = new long[]{0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
 	static final long KNIGHT_SPAN = 43234889994L, KING_SPAN = 460039L;
 
+	// Makes a specified 'move' onto a board represented by 'data' and returns the new board
+	// A move is represented by 4 characters. The first 2 characters correspond to initial location and the final 2 characters correspond to the end location
+	// A location is represented by 2 digits. The first being the row and the second being the column (top-left is '00', bottom-right is '77', a1 is '70', h8 is '07')
+	// There are some special moves that are represented differently from regular moves (en passants, promotions, castling)
 	public static long[] makeMove(String move, long[] data){
 		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], epSquare = 0, wkCastle = data[13], wqCastle = data[14], bkCastle = data[15], bqCastle = data[16], whiteToMove = data[17];
 		char a = move.charAt(0), bb = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
@@ -116,12 +124,16 @@ public class MoveGenerator {
 		whiteToMove = 1 - whiteToMove;
 		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove};
 	}
+	// Gets a list of moves that are possible by the side to move
+	// All moves are concatenated together, each move is 4 characters long
+	// Does not account for king safety, some of these moves may be invalid
 	public static String getMoves(long[] data){
 		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], epSquare = data[12], wkCastle = data[13], wqCastle = data[14], bkCastle = data[15], bqCastle = data[16], whiteToMove = data[17];
 		if (whiteToMove == 1) return whiteMoves(P,N,B,R,Q,K,p,n,b,r,q,k,epSquare,wkCastle,wqCastle);
 		else return blackMoves(P,N,B,R,Q,K,p,n,b,r,q,k,epSquare,bkCastle,bqCastle);
 	}
 	
+	//Everything below here consists of helper methods that are not that important
 	public static long linearMoves(int origin, long occupied){
 		long binaryOrigin = 1L << origin;
 		long horizontal = (occupied - 2 * binaryOrigin) ^ Long.reverse(Long.reverse(occupied) - 2 * Long.reverse(binaryOrigin));

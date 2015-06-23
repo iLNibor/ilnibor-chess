@@ -12,9 +12,11 @@ public class BoardTools {
 	static int totalCounter, subCounter, maxDepth;
 	static AtomicInteger iter = new AtomicInteger(0);
 	
+	// Returns a standard board representation
 	public static long[] initiateStandard(){
-		return initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+		return initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	}
+	// Returns a board representing the starting position specified in FEN notation
 	public static long[] initiateFEN(String FEN){
 		long P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle,wqCastle,bkCastle,bqCastle,whiteToMove;
 		P = p = R = r = N = n = B = b = Q = q = K = k = epSquare = wkCastle = wqCastle = bkCastle = bqCastle = whiteToMove = 0;
@@ -65,6 +67,7 @@ public class BoardTools {
 		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove};
 	}
 	
+	// Prints a bitboard
 	public static void drawBitboard(long bitBoard) {
         String chessBoard[][]=new String[8][8];
         for (int i=0;i<64;i++) {
@@ -75,6 +78,7 @@ public class BoardTools {
             System.out.println(Arrays.toString(chessBoard[i]));
         }
     }
+	// Prints the chess board represented by 'data'
 	public static void drawBoard(long[] data){
 		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], epSquare = data[12];
 		String chessBoard[][] = new String[8][8];
@@ -96,12 +100,14 @@ public class BoardTools {
         for (int i=0;i<8;i++) System.out.println(Arrays.toString(chessBoard[i]));
 	}
 	
+	// Converts a 4 character move from row + column notation to algebraic notation (e.g. a1b2, e3d4)
 	public static String moveToAlgebra(String move){
 		if (!Character.isDigit(move.charAt(3))) return move;
 		String moveString = "" + (char)(move.charAt(1) + 49) + ('8' - move.charAt(0)) + (char)(move.charAt(3) + 49) + ('8' - move.charAt(2));
 		return moveString;
 	}
 	
+	// Performs a single-threaded perft routine to test move generation from the 'FEN' starting position to a specified 'depth'
 	public static void perft(String FEN, int depth){
 		maxDepth = depth;
 		totalCounter = 0;
@@ -111,10 +117,11 @@ public class BoardTools {
 		long startTime = System.currentTimeMillis();
 		perft(0, data);
 		long endTime = System.currentTimeMillis();
-		System.out.println("\nTotal: " + totalCounter);
+		System.out.println("Total: " + totalCounter);
 		System.out.println("Time: " + (endTime-startTime) + " milliseconds");
         System.out.println("Moves/sec : "+(int)(totalCounter / ((endTime-startTime)/1000.0)));
 	}
+	// Recursive helper method to perft()
 	public static void perft(int depth, long[] data){
 		String moves = MoveGenerator.getMoves(data);
 		for (int i = 0; i < moves.length(); i += 4){
@@ -130,7 +137,8 @@ public class BoardTools {
 			}
 		}
 	}
-	public static void perftConcurrency(String FEN, int depth) throws InterruptedException{
+	// Performs a multi-threaded perft routine to test move generation from the 'FEN' starting position to a specified 'depth' using the specified 'numThreads'
+	public static void perftConcurrency(String FEN, int depth, int numThreads) throws InterruptedException{
 		maxDepth = depth;
 		totalCounter = 0;
 		long[] data = initiateFEN(FEN);
@@ -139,7 +147,7 @@ public class BoardTools {
 		long startTime = System.currentTimeMillis();
 		
 		BlockingQueue<Runnable> jobs = new ArrayBlockingQueue<Runnable>(60);
-		ThreadPoolExecutor engine = new ThreadPoolExecutor(8, 8, 1, TimeUnit.SECONDS, jobs);
+		ThreadPoolExecutor engine = new ThreadPoolExecutor(numThreads, numThreads, 1, TimeUnit.SECONDS, jobs);
 		
 		String moves = MoveGenerator.getMoves(data);
 		for (int i = 0; i < moves.length(); i += 4){
@@ -153,10 +161,11 @@ public class BoardTools {
 		
 		long endTime = System.currentTimeMillis();
 		
-		System.out.println("\nTotal: " + iter.get());
+		System.out.println("Total: " + iter.get());
 		System.out.println("Time: " + (endTime-startTime) + " milliseconds");
         System.out.println("Moves/sec : "+(int)(iter.get() / ((endTime-startTime)/1000.0)));
 	}
+	// Thread object used in the multi-threaded perft routine
 	static class PerftJob implements Runnable{
 		long[] data;
 		public PerftJob(long[] data){
@@ -177,6 +186,7 @@ public class BoardTools {
 			return counter;
 		}
 	}
+	// Benchmark routine to test move generation speed using 1 thread to 25 threads
 	public static void benchmark(int depth) throws InterruptedException{
 		maxDepth = depth;
 		long[] data = initiateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
@@ -203,11 +213,10 @@ public class BoardTools {
 		}
 	}
 	
-	
 	public static void main(String[] args) throws InterruptedException {
-		drawBitboard(-9187201950435737472L);
 		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 5);
-		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 6);
+		//System.out.println();
+		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 5, 4);
 		//benchmark(5);
 	}
 }
