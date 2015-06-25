@@ -5,10 +5,11 @@ import java.util.Scanner;
 public class Engine {
 	static String ENGINE_NAME = "Ultron 1.0";
 	static long[] data;
-	static int MAX_DEPTH = 6;
-	static boolean ultronIsWhite;
+	static int MAX_DEPTH;
+	static String bestMove;
+	static boolean ultronIsWhite, run;
 	
-	public static void run(){
+	public static void run() throws InterruptedException{
 		Scanner input = new Scanner(System.in);
 		while(true){
 			String inputString = input.nextLine();
@@ -72,8 +73,14 @@ public class Engine {
         }
         inputPrint();
 	}
-	public static void inputGo(){
-		System.out.println("bestmove " + bestMove());
+	public static void inputGo() throws InterruptedException{
+		ultronIsWhite = data[17] == 1;
+		run = true;
+		searchThread job = new searchThread();
+		job.start();
+		Thread.sleep(3000);
+		System.out.println("bestmove " + bestMove);
+		job.endThread();
 	}
 	public static void inputPrint(){
 		BoardTools.drawBoard(data);
@@ -90,6 +97,7 @@ public class Engine {
 			data = MoveGenerator.makeMove(move, tempData);
 			if (data != null){
 				int tempScore = min(1, bestScore);
+				//System.out.println(BoardTools.moveToAlgebra(move) + " " + tempScore);
 				if (tempScore > bestScore){
 					bestScore = tempScore;
 					bestMove =  BoardTools.moveToAlgebra(move);
@@ -98,6 +106,7 @@ public class Engine {
 		}
 		
 		data = tempData;
+		System.out.println("depth " + MAX_DEPTH + ": " + bestMove + " " + bestScore);
 		if (bestScore > 195000) System.out.println("(mate in " + (200001 - bestScore) / 2 + ")");
 		return bestMove;
 	}
@@ -114,6 +123,7 @@ public class Engine {
 				if (tempScore <= hardMin) return tempScore;
 				else if (tempScore < bestScore) bestScore = tempScore;
 			}
+			if (!run) break;
 		}
 		
 		if (bestScore == Integer.MAX_VALUE)
@@ -135,6 +145,7 @@ public class Engine {
 				if (tempScore >= hardMax) return tempScore;
 				else if (tempScore > bestScore) bestScore = tempScore;
 			}
+			if (!run) break;
 		}
 		
 		if (bestScore == Integer.MIN_VALUE)
@@ -220,8 +231,21 @@ public class Engine {
 		if (ultronIsWhite) return whiteScore;
 		else return whiteScore * -1;
 	}
+	static class searchThread extends Thread{
+		public void run() {
+			bestMove = "";
+			for (int i = 2; i < 20; i ++){
+				MAX_DEPTH = i;
+				bestMove = bestMove();
+				if (!run) break;
+			}
+		}
+		public void endThread(){
+			run = false;
+		}
+	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		Engine.run();
 	}
 }
