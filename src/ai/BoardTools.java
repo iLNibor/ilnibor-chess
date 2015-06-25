@@ -102,9 +102,44 @@ public class BoardTools {
 	
 	// Converts a 4 character move from row + column notation to algebraic notation (e.g. a1b2, e3d4)
 	public static String moveToAlgebra(String move){
-		if (!Character.isDigit(move.charAt(3))) return move;
-		String moveString = "" + (char)(move.charAt(1) + 49) + ('8' - move.charAt(0)) + (char)(move.charAt(3) + 49) + ('8' - move.charAt(2));
-		return moveString;
+		int start = 0, end = 0;
+		char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+		String algebraicMove = "";
+		
+    	if (Character.isDigit(d)){
+			start = (a - 48) * 8 + (b - 48);
+			end = (c - 48) * 8 + (d - 48);
+    	} else if (d == 'P'){
+			if (Character.isUpperCase(c)){
+				start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[6]);
+				end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[7]);
+			} else {
+				start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[1]);
+				end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[0]);
+			}
+			algebraicMove = "" + Character.toLowerCase(c);
+    	} else if (d == 'E'){
+    		if (c == 'W'){
+    			start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[4]);
+    			end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[5]);
+    		} else {
+    			start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[3]);
+    			end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[2]);
+    		}
+    	} else if (d == 'C'){
+    		if (a == 'W'){
+    			start = 60;
+    			if (b == 'K') end = 62;
+    			else end = 58;
+    		} else {
+    			start = 4;
+    			if (b == 'K') end = 6;
+    			else end = 2;
+    		}
+    	}
+    	else System.out.println("INVALID MOVE");
+    	
+    	return "" + (char)('a' + (start % 8)) + (char)('8' - (start / 8)) + (char)('a' + (end % 8)) + (char)('8' - (end / 8)) + algebraicMove;
 	}
 	
 	// Performs a single-threaded perft routine to test move generation from the 'FEN' starting position to a specified 'depth'
@@ -212,11 +247,5 @@ public class BoardTools {
 			System.out.println(i + " threads:\t" + (endTime-startTime)/1000.0 + " seconds");
 		}
 	}
-	
-	public static void main(String[] args) throws InterruptedException {
-		//perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 5);
-		//System.out.println();
-		perftConcurrency("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 5, 4);
-		//benchmark(5);
-	}
+
 }

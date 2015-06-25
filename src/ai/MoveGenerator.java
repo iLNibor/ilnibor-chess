@@ -119,8 +119,7 @@ public class MoveGenerator {
 		}
 		else
 			System.out.println("INVALID MOVE");
-		long occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
-		if ((whiteToMove == 1 && (K & unsafeWhite(p,n,b,r,q,k,occupied)) != 0) || (whiteToMove == 0 && (k & unsafeBlack(P,N,B,R,Q,K,occupied)) != 0)) return null;
+		if (underCheck(new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove})) return null;
 		whiteToMove = 1 - whiteToMove;
 		return new long[]{P,p,R,r,N,n,B,b,Q,q,K,k,epSquare,wkCastle, wqCastle, bkCastle, bqCastle, whiteToMove};
 	}
@@ -584,5 +583,9 @@ public class MoveGenerator {
 		unsafe |= moves;
 		return unsafe;
 	}
-
+	public static boolean underCheck(long[] data){
+		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9], K = data[10], k = data[11], whiteToMove = data[17];
+		long occupied = P|N|B|R|Q|K|p|n|b|r|q|k;
+		return (whiteToMove == 1 && (K & unsafeWhite(p,n,b,r,q,k,occupied)) != 0) || (whiteToMove == 0 && (k & unsafeBlack(P,N,B,R,Q,K,occupied)) != 0);
+	}
 }

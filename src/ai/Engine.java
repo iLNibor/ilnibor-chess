@@ -5,6 +5,8 @@ import java.util.Scanner;
 public class Engine {
 	static String ENGINE_NAME = "Ultron 1.0";
 	static long[] data;
+	static int MAX_DEPTH = 6;
+	static boolean ultronIsWhite;
 	
 	public static void run(){
 		Scanner input = new Scanner(System.in);
@@ -20,7 +22,7 @@ public class Engine {
 				inputNewGame();
 			} else if (inputString.startsWith("position")){
 				inputPosition(inputString);
-			} else if (inputString.equals("go")){
+			} else if (inputString.contains("go")){
 				inputGo();
 			} else if (inputString.equals("quit")){
 				input.close();
@@ -46,74 +48,180 @@ public class Engine {
 	
 	}
 	public static void inputPosition(String input){
-		input=input.substring(9).concat(" ");
+		input = input.substring(9);
         if (input.contains("startpos")){
-            input=input.substring(9);
-            BoardTools.initiateStandard();
+            input=input.substring(8);
+            data = BoardTools.initiateStandard();
         }
         else if (input.contains("fen")){
             input=input.substring(4);
-            BoardTools.initiateFEN(input.substring(4));
+            data = BoardTools.initiateFEN(input);
         }
         if (input.contains("moves")){
-        	input=input.substring(6);
-        	while (input.length() > 0){
-        		int start = 0, end = 0;
-                int from = (input.charAt(0) - 'a') + (8 * ('8' - input.charAt(1)));
-                int to = (input.charAt(2) - 'a') + (8 * ('8' - input.charAt(3)));
+        	for (String a: input.substring(input.indexOf("moves") + 6).split(" ")){
                 String moves = MoveGenerator.getMoves(data);
-                
                 for (int i = 0; i < moves.length(); i += 4){
                 	String move = moves.substring(i, i + 4);
-                	char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
-                	if (Character.isDigit(d)){
-            			start = (a - 48) * 8 + (b - 48);
-            			end = (c - 48) * 8 + (d - 48);
-                	} else if (d == 'P'){
-            			if (Character.isUpperCase(c)){
-            				start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[6]);
-            				end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[7]);
-            			} else {
-            				start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[1]);
-            				end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[0]);
-            			}
-                	} else if (d == 'E'){
-                		if (c == 'W'){
-                			start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[4]);
-                			end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[5]);
-                		} else {
-                			start = Long.numberOfTrailingZeros(MoveGenerator.FILES[a - 48] & MoveGenerator.RANKS[3]);
-                			end = Long.numberOfTrailingZeros(MoveGenerator.FILES[b - 48] & MoveGenerator.RANKS[2]);
-                		}
-                	} else if (d == 'C'){
-                		if (a == 'W'){
-                			start = 60;
-                			if (b == 'K') end = 62;
-                			else end = 58;
-                		} else {
-                			start = 4;
-                			if (b == 'K') end = 6;
-                			else end = 2;
-                		}
+                	String algebraicMove = BoardTools.moveToAlgebra(move);
+                	if (a.equals(algebraicMove)){
+                		data = MoveGenerator.makeMove(move, data);
+                		break;
                 	}
-                	else System.out.println("INVALID MOVE");
-                	
                 }
-                
-                input=input.substring(input.indexOf(' ') + 1);
             }
         }
-        System.out.println(input);
+        inputPrint();
 	}
 	public static void inputGo(){
-		
+		System.out.println("bestmove " + bestMove());
 	}
 	public static void inputPrint(){
+		BoardTools.drawBoard(data);
+	}
+	
+	public static String bestMove(){
+		String bestMove = "";
+		int bestScore = Integer.MIN_VALUE;
+		long[] tempData = data;
+		String moves = MoveGenerator.getMoves(data);
 		
+		for (int i = 0; i < moves.length(); i += 4){
+			String move = moves.substring(i, i + 4);
+			data = MoveGenerator.makeMove(move, tempData);
+			if (data != null){
+				int tempScore = min(1, bestScore);
+				if (tempScore > bestScore){
+					bestScore = tempScore;
+					bestMove =  BoardTools.moveToAlgebra(move);
+				}
+			}
+		}
+		
+		data = tempData;
+		if (bestScore > 195000) System.out.println("(mate in " + (200001 - bestScore) / 2 + ")");
+		return bestMove;
+	}
+	public static int min(int depth, int hardMin){
+		if (depth == MAX_DEPTH) return evaluate();
+		int bestScore = Integer.MAX_VALUE;
+		long[] tempData = data;
+		String moves = MoveGenerator.getMoves(data);
+		
+		for (int i = 0; i < moves.length(); i += 4){
+			data = MoveGenerator.makeMove(moves.substring(i, i + 4), tempData);
+			if (data != null){
+				int tempScore = max(depth + 1, bestScore);
+				if (tempScore <= hardMin) return tempScore;
+				else if (tempScore < bestScore) bestScore = tempScore;
+			}
+		}
+		
+		if (bestScore == Integer.MAX_VALUE)
+			if (MoveGenerator.underCheck(tempData)) return 200000 - depth;
+			else return 0;
+		
+		return bestScore;
+	}
+	public static int max(int depth, int hardMax){
+		if (depth == MAX_DEPTH) return evaluate();
+		int bestScore = Integer.MIN_VALUE;
+		long[] tempData = data;
+		String moves = MoveGenerator.getMoves(data);
+		
+		for (int i = 0; i < moves.length(); i += 4){
+			data = MoveGenerator.makeMove(moves.substring(i, i + 4), tempData);
+			if (data != null){
+				int tempScore = min(depth + 1, bestScore);
+				if (tempScore >= hardMax) return tempScore;
+				else if (tempScore > bestScore) bestScore = tempScore;
+			}
+		}
+		
+		if (bestScore == Integer.MIN_VALUE)
+			if (MoveGenerator.underCheck(tempData)) return -200000 + depth;
+			else return 0;
+		
+		return bestScore;
+	}
+	public static int evaluate(){
+		int whiteScore = 0;
+		long P = data[0], p = data[1], R = data[2], r = data[3], N = data[4], n = data[5], B = data[6], b = data[7], Q = data[8], q = data[9];
+		
+		long location = P & ~(P - 1);
+		while (location != 0){
+			whiteScore += 100;
+			P &= ~location;
+			location = P & ~(P - 1);
+		}
+		
+		location = p & ~(p - 1);
+		while (location != 0){
+			whiteScore -= 100;
+			p &= ~location;
+			location = p & ~(p - 1);
+		}
+		
+		location = R & ~(R - 1);
+		while (location != 0){
+			whiteScore += 500;
+			R &= ~location;
+			location = R & ~(R - 1);
+		}
+		
+		location = r & ~(r - 1);
+		while (location != 0){
+			whiteScore -= 500;
+			r &= ~location;
+			location = r & ~(r - 1);
+		}
+		
+		location = N & ~(N - 1);
+		while (location != 0){
+			whiteScore += 320;
+			N &= ~location;
+			location = N & ~(N - 1);
+		}
+		
+		location = n & ~(n - 1);
+		while (location != 0){
+			whiteScore -= 320;
+			n &= ~location;
+			location = n & ~(n - 1);
+		}
+		
+		location = B & ~(B - 1);
+		while (location != 0){
+			whiteScore += 330;
+			B &= ~location;
+			location = B & ~(B - 1);
+		}
+		
+		location = b & ~(b - 1);
+		while (location != 0){
+			whiteScore -= 330;
+			b &= ~location;
+			location = b & ~(b - 1);
+		}
+		
+		location = Q & ~(Q - 1);
+		while (location != 0){
+			whiteScore += 900;
+			Q &= ~location;
+			location = Q & ~(Q - 1);
+		}
+		
+		location = q & ~(q - 1);
+		while (location != 0){
+			whiteScore -= 900;
+			q &= ~location;
+			location = q & ~(q - 1);
+		}
+		
+		if (ultronIsWhite) return whiteScore;
+		else return whiteScore * -1;
 	}
 	
 	public static void main(String[] args) {
 		Engine.run();
-
 	}
 }
